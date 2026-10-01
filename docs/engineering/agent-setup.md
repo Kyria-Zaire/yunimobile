@@ -118,8 +118,11 @@ Si l'outil n'est pas disponible, marquer sa vérification **« non exécutée »
 
 ### Résultats
 
+Tests des adaptateurs YUNIMOBILE-0003 — résultats transmis en conversation et
+consignés dans YUNIMOBILE-0004.
+
 | Outil | Vérification | Date | Indices de chargement |
 |---|---|---|---|
-| Claude Code | rapport en conversation (YUNIMOBILE-0004) | 2026-10-01 | Instructions du projet et import présents dans le contexte initial, selon le rapport de l'agent sans outil |
-| Codex | rapport en conversation (YUNIMOBILE-0004) | 2026-10-01 | Doctrine présente, comportement conforme ; mécanisme natif non vérifiable |
+| Claude Code | rapport en conversation | 2026-10-01 | Instructions du projet et import présents dans le contexte initial, selon le rapport de l'agent sans outil |
+| Codex | rapport en conversation | 2026-10-01 | Doctrine présente, comportement conforme ; mécanisme natif non vérifiable |
 | Cursor | reportée (demande de Kyria, jusqu'au 7 octobre) | — | — |

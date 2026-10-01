@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-01 21:43 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-01 22:41 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -13,10 +13,28 @@
 | 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé pour la configuration documentaire ; tests de session partiels (voir ci-dessous) |
 | 0.4 Skills / plugins — audit et sélection | YUNIMOBILE-0004 | Terminé — audit terminé, installation non réalisée |
 | 0.5 Skills — installation de deux skills adaptés | YUNIMOBILE-0005 | Terminé |
+| 0.6 Audit de reprise de la base mobile Expo | YUNIMOBILE-0006 | Terminé — audit terminé, stratégie de reprise non décidée |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0006
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0006.md`.
+- Livrable : `docs/engineering/mobile-reuse-audit.md`.
+- **Commit de départ** : `dc9427bede655fc540b22313a6fa6a8f5d284fd7`.
+- Source examinée en lecture seule : `C:\Users\kyria\yunicity`, branche
+  `feat/c3-global-refonte-preview` @ `ee57ce1d`, arbre propre ; base mobile
+  identique sur `origin/main` local.
+- Préférence provisoire de l'auteur de l'audit : option B (nouvelle base, reprise
+  sélective), la base existante restant dans le monorepo comme référence. **Aucune
+  décision CTO** : stratégie de reprise non décidée ; critères de décision au § 10
+  de l'audit.
+- Revue CTO en conversation ; ajustements appliqués ; contrôles locaux exécutés par
+  Claude, sans réexécution indépendante.
+- Aucun contrôle exécuté sur l'app ; aucune installation ni modification de la
+  source ; commit local de clôture, sans push.
 
 ### Historique — YUNIMOBILE-0005
 
@@ -96,6 +114,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0003 sont inclus dans le commit de clôture de 0.3.
 - Les fichiers de YUNIMOBILE-0004 sont inclus dans le commit de clôture de 0.4.
 - Les fichiers de YUNIMOBILE-0005 sont inclus dans le commit de clôture de 0.5.
+- Les fichiers de YUNIMOBILE-0006 sont inclus dans le commit de clôture de 0.6.
 - **Aucun push** n'a été effectué à ce stade.
 - **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
@@ -111,7 +130,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 ## Décisions ouvertes
 
 - Reprise de la base Expo existante (méthode, périmètre, version SDK) ; conditionne
-  `expo-router`.
+  `expo-router`. Audit terminé (YUNIMOBILE-0006) ; stratégie non décidée.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
 - Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
@@ -123,4 +142,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-Aucun ticket suivant n'est lancé : en attente de décision.
+Diagnostic typecheck / lint de la base mobile existante, sans modification de la
+source (méthode d'exécution à autoriser).
+
+Non lancé : en attente de décision.
