@@ -1,0 +1,88 @@
+# --- Dependencies ---
+node_modules/
+.pnpm-store/
+
+# --- Build outputs ---
+dist/
+build/
+web-build/
+out/
+
+# --- Caches (pnpm / Expo / Turbo / tooling) ---
+.expo/
+.expo-shared/
+.turbo/
+.cache/
+.metro-health-check*
+.eslintcache
+*.tsbuildinfo
+
+# --- Test coverage ---
+coverage/
+.nyc_output/
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Environment files (keep examples only) ---
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# --- Local agent configuration & auth (shared rules/skills stay versioned) ---
+.claude/settings.local.json
+.claude/*.local.*
+.claude/credentials*
+.claude/.credentials*
+.cursor/mcp.json
+.cursor/*.local.*
+.agents/*.local.*
+.mcp.local.json
+CLAUDE.local.md
+AGENTS.local.md
+.npmrc.local
+auth.json
+*.auth.json
+
+# --- Private keys, keystores, signing certificates & credentials ---
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
+credentials.json
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+
+# --- Mobile binaries ---
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
+
+# --- OS temporary files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.tmp
+*.swp
+*~
