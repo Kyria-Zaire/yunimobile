@@ -3,8 +3,9 @@
 Consignes communes à tous les agents de code (Claude Code, Codex, Cursor) travaillant
 sur Yunicity Mobile.
 
-> Ce fichier n'est pas chargé automatiquement par tous les outils. Les adaptateurs
-> propres à chaque agent seront créés dans une étape ultérieure (0.3) et y renverront.
+> Points d'entrée : Claude Code via `CLAUDE.md` (import de ce fichier), Cursor via
+> `.cursor/rules/00-project-entry.mdc` (renvoi vers ce fichier), Codex par lecture
+> native de `AGENTS.md`. Détails et vérification : `docs/engineering/agent-setup.md`.
 
 ## Démarrage
 

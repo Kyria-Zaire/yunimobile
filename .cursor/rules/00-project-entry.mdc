@@ -1,0 +1,19 @@
+---
+description: "Point d'entrée des consignes Yunicity Mobile"
+alwaysApply: true
+---
+
+# Yunicity Mobile — point d'entrée
+
+Dépôt de l'application mobile Yunicity, **en préparation** : aucune commande
+applicative (installation, lancement, tests) n'est encore définie.
+
+Avant toute modification :
+
+1. Lire et suivre `AGENTS.md` à la racine du dépôt : c'est la doctrine commune,
+   elle fait foi.
+2. Lire `.loop/state.md`, puis le fichier du ticket actif dans `.loop/tickets/`.
+3. Suivre le workflow décrit dans `docs/engineering/loop-protocol.md`.
+
+Cette règle est un adaptateur : elle ne recopie pas la doctrine et n'ajoute aucune
+règle ni bibliothèque.
