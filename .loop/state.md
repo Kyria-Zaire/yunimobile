@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-01 20:08 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-01 21:43 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -12,10 +12,35 @@
 | 0.2 Doctrine commune et protocole du loop | YUNIMOBILE-0002 | Terminé |
 | 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé pour la configuration documentaire ; tests de session partiels (voir ci-dessous) |
 | 0.4 Skills / plugins — audit et sélection | YUNIMOBILE-0004 | Terminé — audit terminé, installation non réalisée |
+| 0.5 Skills — installation de deux skills adaptés | YUNIMOBILE-0005 | Terminé |
 
 ## Ticket actif
 
-**Aucun ticket en cours.**
+Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0005
+
+Fichier : `.loop/tickets/YUNIMOBILE-0005.md`. Provenance :
+`docs/engineering/skills-provenance.md`.
+
+- **Commit de départ** : `df9f9d118f1f6b4ba528dd5d9ee24a72161e3e54`
+  (`docs: audit and select initial engineering skills`).
+- Skills documentaires `yunicity-verification` et `yunicity-debugging` : référence
+  `.agents/skills/` (Codex), copie identique `.claude/skills/` (Claude Code).
+- Revue CTO en conversation ; corrections appliquées ; contrôles locaux exécutés par
+  Claude, sans réexécution indépendante.
+- **Tests en session neuve** (rapports transmis par Kyria, non réexécutés) :
+  - Claude Code : invocation réussie des deux skills depuis `.claude/skills/`,
+    contenu adapté confirmé par l'outil Skill ; scénarios fictifs conformes
+    (session précédente) ;
+  - Codex : deux skills dans le catalogue initial (`.agents/skills/`), contenu
+    fourni dans les blocs skill ; scénarios fictifs conformes, sans lecture
+    manuelle de secours ;
+  - portée : découverte et comportement sur ces scénarios, pas une garantie
+    générale de respect des instructions ;
+  - Cursor : reporté.
+- Aucune configuration globale, plugin, dépendance ni script tiers ; commit local de
+  clôture, sans push.
 
 ### Historique — YUNIMOBILE-0004
 
@@ -70,10 +95,12 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0002 sont inclus dans le commit de clôture de 0.2.
 - Les fichiers de YUNIMOBILE-0003 sont inclus dans le commit de clôture de 0.3.
 - Les fichiers de YUNIMOBILE-0004 sont inclus dans le commit de clôture de 0.4.
+- Les fichiers de YUNIMOBILE-0005 sont inclus dans le commit de clôture de 0.5.
 - **Aucun push** n'a été effectué à ce stade.
-- **Aucune application, dépendance, skill ou plugin** n'est installé dans le dépôt.
-- `.claude/rules/`, `.claude/skills/` et `.agents/skills/` existent localement,
-  vides (non suivis par Git).
+- **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
+- Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
+  dans `.agents/skills/` et `.claude/skills/` (YUNIMOBILE-0005).
+- `.claude/rules/` existe localement, vide (non suivi par Git).
 
 ## Dépôt lié
 
@@ -89,15 +116,11 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
 - Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
 - Plugin Superpowers 6.4.1 installé globalement (Claude Code, portée utilisateur,
-  hook `SessionStart`) : **conservé inchangé** ; doublon avec les futures versions
-  locales adaptées à traiter lors de l'installation et des tests de découverte.
-- Chemin de découverte des skills Codex (`.agents/skills/`) à confirmer.
+  hook `SessionStart`) : **conservé inchangé** ; coexistence avec les versions
+  locales adaptées documentée ; traitement du doublon à décider.
+- Skills pour Cursor : non configurés, reportés.
 - Test Cursor de 0.3 : reporté jusqu'au 7 octobre.
 
 ## Prochaine étape proposée
 
-Ticket d'installation des versions locales adaptées de
-`verification-before-completion` et `systematic-debugging`, avec tests de découverte
-en session neuve (Claude Code, Codex) et traitement du doublon Superpowers global.
-
-Non lancé : en attente de décision.
+Aucun ticket suivant n'est lancé : en attente de décision.
