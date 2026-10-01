@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-01 18:02 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-01 20:08 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -10,11 +10,29 @@
 |---|---|---|
 | 0.1 Fichiers de base et fins de ligne | YUNIMOBILE-0001, YUNIMOBILE-0001A | Clôturée selon les rapports fournis |
 | 0.2 Doctrine commune et protocole du loop | YUNIMOBILE-0002 | Terminé |
-| 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé pour la configuration documentaire ; chargements en session non vérifiés |
+| 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé pour la configuration documentaire ; tests de session partiels (voir ci-dessous) |
+| 0.4 Skills / plugins — audit et sélection | YUNIMOBILE-0004 | Terminé — audit terminé, installation non réalisée |
 
 ## Ticket actif
 
 **Aucun ticket en cours.**
+
+### Historique — YUNIMOBILE-0004
+
+Fichier : `.loop/tickets/YUNIMOBILE-0004.md`. Rapport :
+`docs/engineering/skills-selection.md`.
+
+- **Commit de départ** : `ed0adfc8758b6633979bbccb9027932d1219284d`
+  (`docs: configure agent entry points`).
+- Première installation envisagée : `verification-before-completion` et
+  `systematic-debugging`, en **versions locales adaptées** (décisions CTO détaillées
+  dans le rapport).
+- Différés : `expo-router` (confirmation de la base mobile), `expo-data-fetching`,
+  `expo-project-structure`, `skill-creator`.
+- Revue CTO en conversation ; ajustements intégrés ; contrôles locaux exécutés par
+  Claude, sans réexécution indépendante.
+- Aucune installation, aucun script tiers exécuté ; commit local de clôture, sans
+  push.
 
 ### Historique — YUNIMOBILE-0003
 
@@ -30,8 +48,12 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - `AGENTS.md` décrit désormais ces points d'entrée existants.
 - Revue du contenu par le CTO en conversation ; contrôles locaux exécutés par Claude,
   sans réexécution indépendante.
-- **Chargements en session non vérifiés** : aucune session neuve de Claude Code,
-  Codex ou Cursor n'a été exécutée (procédure dans `docs/engineering/agent-setup.md`).
+- **Tests de session** (rapports transmis en conversation, non réexécutés) :
+  - Claude Code : instructions du projet et import `@AGENTS.md` présents dans le
+    contexte initial, selon son rapport sans outil ;
+  - Codex : doctrine présente, comportement conforme ; mécanisme natif de
+    chargement non vérifiable ;
+  - Cursor : test reporté à la demande de Kyria, jusqu'au 7 octobre.
 
 ### Historique — YUNIMOBILE-0002
 
@@ -47,8 +69,11 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   (`chore: bootstrap mobile repository`).
 - Les fichiers de YUNIMOBILE-0002 sont inclus dans le commit de clôture de 0.2.
 - Les fichiers de YUNIMOBILE-0003 sont inclus dans le commit de clôture de 0.3.
+- Les fichiers de YUNIMOBILE-0004 sont inclus dans le commit de clôture de 0.4.
 - **Aucun push** n'a été effectué à ce stade.
-- **Aucune application, dépendance, skill ou plugin** n'est installé.
+- **Aucune application, dépendance, skill ou plugin** n'est installé dans le dépôt.
+- `.claude/rules/`, `.claude/skills/` et `.agents/skills/` existent localement,
+  vides (non suivis par Git).
 
 ## Dépôt lié
 
@@ -58,13 +83,21 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Décisions ouvertes
 
-- Reprise de la base Expo existante (méthode et périmètre).
+- Reprise de la base Expo existante (méthode, périmètre, version SDK) ; conditionne
+  `expo-router`.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
 - Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
+- Plugin Superpowers 6.4.1 installé globalement (Claude Code, portée utilisateur,
+  hook `SessionStart`) : **conservé inchangé** ; doublon avec les futures versions
+  locales adaptées à traiter lors de l'installation et des tests de découverte.
+- Chemin de découverte des skills Codex (`.agents/skills/`) à confirmer.
+- Test Cursor de 0.3 : reporté jusqu'au 7 octobre.
 
 ## Prochaine étape proposée
 
-**Vérification en sessions neuves** de Claude Code, Codex et Cursor selon
-`docs/engineering/agent-setup.md`, **avant les skills** (0.4 — Skills / plugins).
-Non lancée : en attente de décision.
+Ticket d'installation des versions locales adaptées de
+`verification-before-completion` et `systematic-debugging`, avec tests de découverte
+en session neuve (Claude Code, Codex) et traitement du doublon Superpowers global.
+
+Non lancé : en attente de décision.
