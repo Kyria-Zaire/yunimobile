@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 10:15 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 10:44 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -17,10 +17,27 @@
 | 0.7 Diagnostic typecheck et lint de la base mobile | YUNIMOBILE-0007 | Terminé |
 | 0.8 Diagnostic de compatibilité Expo SDK 54 | YUNIMOBILE-0008 | Terminé — option A (extraction contrôlée) approuvée |
 | 0.9 Preuve d'extraction autonome et bundle Metro Android | YUNIMOBILE-0009 | Terminé — preuve réussie, GO intégration |
+| 0.9A Hygiène de l'historique Git avant publication | YUNIMOBILE-0009A | Terminé |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0009A
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0009A.md` (créé après la réécriture, qui
+  exigeait un arbre propre). Rapport : `docs/engineering/git-history-hygiene.md`.
+- Auteur et committer des 9 commits de `main` réécrits vers Kyria-Zaire avec
+  adresse GitHub noreply vérifiée (`git filter-branch --env-filter`, `main`
+  seulement). Ancien HEAD `68b1dd8749dbbc3700ca600a8fc06bb41b85dacf` → nouveau HEAD
+  `64ec1d66327bb2da52a8c06abf9e2a581d2ba720`.
+- Trees, messages, dates et lignes `Co-Authored-By` identiques ; historique
+  linéaire ; `git fsck --full` sans corruption.
+- Identité configurée localement ; configuration globale inchangée.
+- **Les SHA cités avant cette entrée désignent l'historique d'avant réécriture** :
+  correspondance dans le rapport.
+- Branche `backup/pre-yunimobile-0009a` et `refs/original` conservées jusqu'à
+  vérification du premier push. Aucun push.
 
 ### Historique — YUNIMOBILE-0009
 
@@ -181,6 +198,8 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0008 sont inclus dans le commit de clôture de 0.8.
 - Les fichiers de YUNIMOBILE-0009 sont inclus dans le commit de clôture de 0.9.
 - **Aucun push** n'a été effectué à ce stade.
+- Historique réécrit par YUNIMOBILE-0009A (identité) ; branche locale
+  `backup/pre-yunimobile-0009a` conservée.
 - **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
   dans `.agents/skills/` et `.claude/skills/` (YUNIMOBILE-0005).
@@ -204,8 +223,8 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   seule jusqu'à la parité.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
-- Identité Git (adresse e-mail d'auteur) à corriger avant toute publication :
-  traitée par YUNIMOBILE-0009A (non lancé).
+- Identité Git : corrigée localement et dans l'historique (YUNIMOBILE-0009A) ;
+  suppression de la branche de récupération après vérification du premier push.
 - Plugin Superpowers 6.4.1 installé globalement (Claude Code, portée utilisateur,
   hook `SessionStart`) : **conservé inchangé** ; coexistence avec les versions
   locales adaptées documentée ; traitement du doublon à décider.
@@ -214,11 +233,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0009A — hygiène de l'historique Git avant première publication** :
-   corriger l'identité Git locale, remplacer l'auteur placeholder des commits
-   locaux par l'identité de Kyria-Zaire, en conservant messages, corps, lignes
-   `Co-Authored-By` et contenu ; vérifier l'historique avant le premier push.
-2. **YUNIMOBILE-0010 — extraction permanente de l'application validée dans
-   `yunimobile`**, immédiatement après.
+**YUNIMOBILE-0010 — extraction permanente de l'application validée dans
+`yunimobile`.**
 
-Non lancés : en attente de décision.
+Non lancé : en attente de décision.
