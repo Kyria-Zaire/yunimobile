@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 04:04 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 10:15 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -16,10 +16,33 @@
 | 0.6 Audit de reprise de la base mobile Expo | YUNIMOBILE-0006 | Terminé — audit terminé, stratégie de reprise non décidée |
 | 0.7 Diagnostic typecheck et lint de la base mobile | YUNIMOBILE-0007 | Terminé |
 | 0.8 Diagnostic de compatibilité Expo SDK 54 | YUNIMOBILE-0008 | Terminé — option A (extraction contrôlée) approuvée |
+| 0.9 Preuve d'extraction autonome et bundle Metro Android | YUNIMOBILE-0009 | Terminé — preuve réussie, GO intégration |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0009
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0009.md`. Rapport :
+  `docs/engineering/mobile-extraction-poc.md`.
+- **Commit de départ** : `8c7dfce076b7ead2395225fed2a359f46042ef05`.
+- Preuve d'extraction autonome **réussie** : typecheck, lint Expo,
+  `expo install --check`, `expo-doctor` (18/18) et `expo export` Android, tous
+  exit 0 ; 978 paquets du registre npm ; React 19.1.0 seul.
+- Décision CTO : **GO** pour l'intégration permanente (sans réexécution
+  indépendante). L'extraction `C:\tmp\yunimobile-0009-extract` est la référence technique ;
+  YUNIMOBILE-0010 réutilisera sa baseline sans nouvelle résolution (lockfile copié
+  tel quel ; empreintes au § 11 du rapport). `node-linker=hoisted` est un choix
+  délibéré. Versions acceptées comme baseline : `@rnmapbox/maps` 10.3.5,
+  `react-native-qrcode-svg` 6.3.26, `@babel/core` 7.29.7.
+- Gates avant le premier dev build : audit des overrides de sécurité du monorepo ;
+  lockfile inchangé après copie ; `react`/`react-dom` 19.1.0 sans React 18 ; tests
+  de `utils` documentés ; bundle Metro jamais présenté comme build natif.
+- Limites : aucun dev build, aucun lancement, aucune preuve d'exécution, aucun
+  build natif. Caches `~/.expo` conservés.
+- Source, copie 0007 et extraction inchangées par la clôture ; commit local, sans
+  push.
 
 ### Historique — YUNIMOBILE-0008
 
@@ -156,6 +179,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0006 sont inclus dans le commit de clôture de 0.6.
 - Les fichiers de YUNIMOBILE-0007 sont inclus dans le commit de clôture de 0.7.
 - Les fichiers de YUNIMOBILE-0008 sont inclus dans le commit de clôture de 0.8.
+- Les fichiers de YUNIMOBILE-0009 sont inclus dans le commit de clôture de 0.9.
 - **Aucun push** n'a été effectué à ce stade.
 - **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
@@ -180,7 +204,8 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   seule jusqu'à la parité.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
-- Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
+- Identité Git (adresse e-mail d'auteur) à corriger avant toute publication :
+  traitée par YUNIMOBILE-0009A (non lancé).
 - Plugin Superpowers 6.4.1 installé globalement (Claude Code, portée utilisateur,
   hook `SessionStart`) : **conservé inchangé** ; coexistence avec les versions
   locales adaptées documentée ; traitement du doublon à décider.
@@ -189,6 +214,11 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-**YUNIMOBILE-0009 — preuve d'extraction autonome et bundle Metro Android.**
+1. **YUNIMOBILE-0009A — hygiène de l'historique Git avant première publication** :
+   corriger l'identité Git locale, remplacer l'auteur placeholder des commits
+   locaux par l'identité de Kyria-Zaire, en conservant messages, corps, lignes
+   `Co-Authored-By` et contenu ; vérifier l'historique avant le premier push.
+2. **YUNIMOBILE-0010 — extraction permanente de l'application validée dans
+   `yunimobile`**, immédiatement après.
 
-Non lancé : en attente de décision.
+Non lancés : en attente de décision.
