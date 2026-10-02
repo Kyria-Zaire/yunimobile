@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 10:44 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 14:20 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -18,10 +18,37 @@
 | 0.8 Diagnostic de compatibilité Expo SDK 54 | YUNIMOBILE-0008 | Terminé — option A (extraction contrôlée) approuvée |
 | 0.9 Preuve d'extraction autonome et bundle Metro Android | YUNIMOBILE-0009 | Terminé — preuve réussie, GO intégration |
 | 0.9A Hygiène de l'historique Git avant publication | YUNIMOBILE-0009A | Terminé |
+| 0.10 Intégration permanente de l'application mobile | YUNIMOBILE-0010 | Terminé |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0010
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0010.md`. Rapport :
+  `docs/engineering/permanent-mobile-extraction.md`.
+- Branche `feat/yunimobile-0010-extraction` depuis `main` @
+  `380208dedb19722525c92c9d0bcb2872459d00c7` ; intégration commitée localement,
+  sans push ni merge.
+- Application Expo SDK 54 intégrée (`apps/mobile`, `packages/{types,utils,ui}`)
+  depuis la baseline 0009, avec divergences volontaires : `typeRoots` local,
+  override `postcss` 8.5.18, identifiants personnels neutralisés, newline finale du
+  `.gitignore` mobile, ligne vide terminale superflue retirée de 7 fichiers de
+  `packages` (détectée par `git diff --cached --check`, changement cosmétique).
+- `brace-expansion` 1.1.21, 2.1.7, 5.0.12 vérifiés par le CTO ; aucun override.
+- `expo-env.d.ts` volontairement ignoré, conformément à Expo.
+- Typecheck, lint, `expo install --check`, `expo-doctor` 18/18 et bundle Android :
+  tous exit 0. Aucun dev build ni lancement runtime.
+- GO validé par le CTO.
+- Verification finale propre par Codex (2026-10-02) : correction EOF deja
+  presente ; sept prefixes identiques a la source/baseline 0009, exactement
+  un octet `0A` superflu retire par fichier. Detection avant commit par
+  `git diff --cached --check` rapportee precedemment ; divergence volontaire
+  cosmetique sans effet fonctionnel. Typecheck et lint reexecutes : exit 0,
+  lint 51 fichiers, 0 erreur, 0 avertissement. Details dans le ticket et le rapport.
+- Index controle : 431 fichiers ; espace libre 2,735 Gio (sous le seuil de
+  vigilance de 3 Gio). Statut termine conditionne au commit dans cette sequence.
 
 ### Historique — YUNIMOBILE-0009A
 
@@ -197,10 +224,13 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0007 sont inclus dans le commit de clôture de 0.7.
 - Les fichiers de YUNIMOBILE-0008 sont inclus dans le commit de clôture de 0.8.
 - Les fichiers de YUNIMOBILE-0009 sont inclus dans le commit de clôture de 0.9.
+- Les fichiers de YUNIMOBILE-0010 sont inclus dans le commit local sur
+  `feat/yunimobile-0010-extraction` (non poussé, non mergé).
 - **Aucun push** n'a été effectué à ce stade.
 - Historique réécrit par YUNIMOBILE-0009A (identité) ; branche locale
   `backup/pre-yunimobile-0009a` conservée.
-- **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
+- Application Expo intégrée sur la branche `feat/yunimobile-0010-extraction`
+  (YUNIMOBILE-0010) ; `main` ne la contient pas encore.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
   dans `.agents/skills/` et `.claude/skills/` (YUNIMOBILE-0005).
 - `.claude/rules/` existe localement, vide (non suivi par Git).
@@ -233,7 +263,24 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-**YUNIMOBILE-0010 — extraction permanente de l'application validée dans
-`yunimobile`.**
+Configuration et premier dev build Android.
 
 Non lancé : en attente de décision.
+
+### Clôture autorisée par le CTO (2026-10-02)
+
+- Blocage d'autorisation levé par instruction explicite du CTO en conversation.
+- Preuves applicatives antérieures réutilisées : typecheck et lint propres Codex
+  exit 0, lint 51 fichiers, 0 erreur, 0 avertissement ; contrôles Expo et bundle
+  réussis selon les rapports Claude, non réexécutés par Codex.
+- Sept corrections EOF vérifiées (exactement −1 octet par fichier, préfixes
+  identiques) ; `git diff --cached --check` réussi après correction, sans sortie.
+- Nettoyages arrêtés : deux refus d'accès sur `.bin/acorn` de la copie 0007 ;
+  inventaire intact confirmé après la première tentative, aucun dossier supprimé.
+  Inventaire `pip-unpack-*` interrompu par un refus d'accès avant toute suppression.
+  Aucun autre nettoyage tenté ; dépendances de Yunimobile et de 0009 conservées.
+- Dérogation CTO au seuil de 3,5 Gio limitée à la clôture documentaire et au commit,
+  avec contrôle d'espace libre supérieur à 2,5 Gio. Aucune installation, aucun
+  bundle, typecheck, lint ou outil Expo relancé. Mesure avant clôture : 2,747 Gio.
+- Commit local autorisé de 431 fichiers ; statut final valable après réussite
+  du commit dans cette séquence. Aucun push, merge ou prochain ticket.
