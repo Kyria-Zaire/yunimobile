@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 14:20 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 (Europe/Paris) — audit YUNIMOBILE-0011A
 
 ## Étape en cours
 
@@ -19,18 +19,48 @@
 | 0.9 Preuve d'extraction autonome et bundle Metro Android | YUNIMOBILE-0009 | Terminé — preuve réussie, GO intégration |
 | 0.9A Hygiène de l'historique Git avant publication | YUNIMOBILE-0009A | Terminé |
 | 0.10 Intégration permanente de l'application mobile | YUNIMOBILE-0010 | Terminé |
+| 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
 
 ## Ticket actif
 
-Aucun. Aucun ticket suivant n'est lancé.
+Aucun. YUNIMOBILE-0011A clôturé : audit réalisé ; premier dev build bloqué.
+Aucun ticket suivant lancé.
+
+### Résultats — YUNIMOBILE-0011A
+
+- Rapport : `docs/engineering/android-environment-audit.md`. Contrôles propres Codex
+  sur `main` @ `ec65162044cbfb5b9dea21beba31666a49b6c8cd` = `origin/main`,
+  arbre initial propre ; ticket enregistré avant diagnostics.
+- Décision **BLOCKED** pour le build : ~2,63 Gio libres aux trois mesures initiales,
+  2,741 Gio en fin d'inventaire ; objectifs 12 Gio minimum / 20 Gio confortables.
+- Windows 11 Famille 25H2 ; Node 24.18.1, pnpm 9.15.9, JDK 21.0.6 ; Android Studio,
+  SDK 36, build-tools 36.0.0 et NDK 27.1.12297006 présents. Toolchain JDK 17 à
+  établir ; JAVA_HOME et variables SDK UNSET. Expo Go insuffisant pour Mapbox.
+- Aucun AVD configuré ; appareil non vérifié, serveur ADB non démarré.
+  Hyperviseur présent, virtualisation firmware active ; états Hyper-V/VMP/WHP
+  non vérifiés faute de droits administrateur, aucun changement Windows.
+- Plan mesuré : anciennes extensions 3,939 Gio, VSIX 2,957 Gio, npm 1,221 Gio,
+  store pnpm jusqu'à 5,612 Gio non partagés sur 8,579 Gio apparents.
+  Scénario prudent ~16,360 Gio libres, gains à confirmer après autorisation.
+  933 pip-unpack inaccessibles, taille inconnue, aucune suppression proposée.
+- Aucune suppression, installation, génération native, build, contrôle lourd,
+  commit ou push. Seuls trois documents changés, non indexés ; HEAD inchangé.
+- Auto-vérification documentaire, `git diff --check` sans erreur ; aucune revue
+  indépendante. Prochain ticket proposé : YUNIMOBILE-0011B, non lancé.
+- Clôture documentaire autorisée explicitement par le CTO : branche
+  `docs/yunimobile-0011a-android-audit`, commit local limité au ticket, au rapport
+  et à cet état. Statut terminé — audit réalisé ; premier dev build bloqué.
+  Aucun nouvel audit, push, merge, installation ou nettoyage pendant la clôture.
 
 ### Historique — YUNIMOBILE-0010
 
 - Fichier : `.loop/tickets/YUNIMOBILE-0010.md`. Rapport :
   `docs/engineering/permanent-mobile-extraction.md`.
 - Branche `feat/yunimobile-0010-extraction` depuis `main` @
-  `380208dedb19722525c92c9d0bcb2872459d00c7` ; intégration commitée localement,
-  sans push ni merge.
+  `380208dedb19722525c92c9d0bcb2872459d00c7` ; intégration commitée puis publiée
+  (`2214012305bc549382afe4f02477d947361a9591`), PR #1 fusionnée par merge commit
+  `ec65162044cbfb5b9dea21beba31666a49b6c8cd`. `main` local synchronisé ; branches
+  feature locale et distante conservées. Ces opérations précèdent l'audit 0011A.
 - Application Expo SDK 54 intégrée (`apps/mobile`, `packages/{types,utils,ui}`)
   depuis la baseline 0009, avec divergences volontaires : `typeRoots` local,
   override `postcss` 8.5.18, identifiants personnels neutralisés, newline finale du
@@ -225,12 +255,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0008 sont inclus dans le commit de clôture de 0.8.
 - Les fichiers de YUNIMOBILE-0009 sont inclus dans le commit de clôture de 0.9.
 - Les fichiers de YUNIMOBILE-0010 sont inclus dans le commit local sur
-  `feat/yunimobile-0010-extraction` (non poussé, non mergé).
-- **Aucun push** n'a été effectué à ce stade.
+  `feat/yunimobile-0010-extraction`, publié puis fusionné dans `main` par la PR #1.
+- Publication et merge de 0010 effectués avant cet audit ; aucun push ni merge
+  effectué pendant YUNIMOBILE-0011A. `main` et `origin/main` sont à
+  `ec65162044cbfb5b9dea21beba31666a49b6c8cd`.
 - Historique réécrit par YUNIMOBILE-0009A (identité) ; branche locale
   `backup/pre-yunimobile-0009a` conservée.
 - Application Expo intégrée sur la branche `feat/yunimobile-0010-extraction`
-  (YUNIMOBILE-0010) ; `main` ne la contient pas encore.
+  (YUNIMOBILE-0010), désormais présente sur `main` après le merge de la PR #1.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
   dans `.agents/skills/` et `.claude/skills/` (YUNIMOBILE-0005).
 - `.claude/rules/` existe localement, vide (non suivi par Git).
@@ -239,7 +271,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 - Une base Expo existe dans `frontend/apps/mobile` de
   <https://github.com/Kyria-Zaire/yunicity.review>.
-- Son extraction vers ce dépôt **n'a pas été effectuée**.
+- Son extraction permanente est intégrée dans `main` depuis YUNIMOBILE-0010.
 
 ## Décisions ouvertes
 
@@ -263,7 +295,8 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-Configuration et premier dev build Android.
+Revue CTO de YUNIMOBILE-0011A, puis YUNIMOBILE-0011B proposé : libération d'espace
+et validation de la cible Android. Aucun ticket suivant lancé par l'audit.
 
 Non lancé : en attente de décision.
 
