@@ -1,0 +1,102 @@
+import { useAuth } from "@/lib/auth-provider";
+import { useRedirectWhenAuthenticated } from "@/lib/use-redirect-when-authenticated";
+import { Link } from "expo-router";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+
+const mascot = require("../assets/yunicity-mascot.png");
+
+export default function LoginScreen() {
+  const { login, error, clearError } = useAuth();
+  const { showAuthGate } = useRedirectWhenAuthenticated();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (showAuthGate) {
+    return (
+      <View style={styles.gate}>
+        <Image source={mascot} style={styles.mascotPulse} accessibilityLabel="Yunicity" />
+        <ActivityIndicator size="large" color="#2A2FFF" style={styles.gateSpinner} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Image source={mascot} style={styles.mascot} accessibilityLabel="Yunicity" />
+      <Text style={styles.title}>Connexion</Text>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Mot de passe"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <Pressable
+        style={styles.button}
+        disabled={isSubmitting}
+        onPress={async () => {
+          clearError();
+          setIsSubmitting(true);
+          try {
+            await login({ email, password });
+          } finally {
+            setIsSubmitting(false);
+          }
+        }}
+      >
+        {isSubmitting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Se connecter</Text>
+        )}
+      </Pressable>
+      <Link href="/register" style={styles.link}>
+        Créer un compte
+      </Link>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  gate: { flex: 1, justifyContent: "center", alignItems: "center", gap: 16 },
+  gateSpinner: { marginTop: 8 },
+  mascot: { width: 80, height: 80, alignSelf: "center", marginBottom: 8 },
+  mascotPulse: { width: 72, height: 72, opacity: 0.95 },
+  container: { flex: 1, padding: 24, justifyContent: "center", gap: 12 },
+  title: { fontSize: 24, fontWeight: "700" },
+  error: { color: "#b91c1c", fontSize: 14 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#d4d4d4",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#fff",
+  },
+  button: {
+    backgroundColor: "#2A2FFF",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: { color: "#fff", fontWeight: "600" },
+  link: { color: "#2A2FFF", textAlign: "center", marginTop: 8 },
+});

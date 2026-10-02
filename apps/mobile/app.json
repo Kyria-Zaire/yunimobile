@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Yunicity",
+    "slug": "yunicity-mobile",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/yunicity-mascot.png",
+    "scheme": "yunicity",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yunicity.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/yunicity-mascot.png",
+        "backgroundColor": "#fafafa"
+      },
+      "package": "com.yunicity.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "@rnmapbox/maps",
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Yunicity utilise la caméra pour scanner les Passport citoyens chez les partenaires."
+        }
+      ],
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "color": "#2A2FFF"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
