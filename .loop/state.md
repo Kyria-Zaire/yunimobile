@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 02:46 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 04:04 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -15,10 +15,29 @@
 | 0.5 Skills — installation de deux skills adaptés | YUNIMOBILE-0005 | Terminé |
 | 0.6 Audit de reprise de la base mobile Expo | YUNIMOBILE-0006 | Terminé — audit terminé, stratégie de reprise non décidée |
 | 0.7 Diagnostic typecheck et lint de la base mobile | YUNIMOBILE-0007 | Terminé |
+| 0.8 Diagnostic de compatibilité Expo SDK 54 | YUNIMOBILE-0008 | Terminé — option A (extraction contrôlée) approuvée |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0008
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0008.md`. Rapport :
+  `docs/engineering/mobile-expo-compatibility.md`.
+- **Commit de départ** : `2f148a5168c73b8742411db00e7e93c8a039e800`.
+- Copie `C:\tmp\yunimobile-0007-diag` conservée ; journaux dans `logs/YUNIMOBILE-0008`.
+- `expo install --check` : exit 1, 4 écarts de versions correctives SDK 54.
+- `expo-doctor` 1.20.4 : exit 1, 15/18 ; échecs : Metro `watchFolders` (cohérent
+  avec le monorepo, à ne pas reprendre tel quel), 58 emplacements de React (risque
+  de résolution à éliminer pendant l'extraction ; plusieurs instances au chargement
+  non démontrées), mêmes correctifs SDK.
+- Aucune incompatibilité explicite avec Expo SDK 54 détectée, en dehors de ces
+  quatre écarts ; aucun build ni comportement d'exécution prouvé.
+- Dépendances directes : 29/29 cohérentes.
+- Effet de bord observé : 4 fichiers de cache dans `~/.expo`, conservés, ni lus ni
+  supprimés ; sans effet sur la copie, la source ou `yunimobile`.
+- Revue CTO : diagnostic accepté ; commit local de clôture, sans push.
 
 ### Historique — YUNIMOBILE-0007
 
@@ -136,6 +155,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0005 sont inclus dans le commit de clôture de 0.5.
 - Les fichiers de YUNIMOBILE-0006 sont inclus dans le commit de clôture de 0.6.
 - Les fichiers de YUNIMOBILE-0007 sont inclus dans le commit de clôture de 0.7.
+- Les fichiers de YUNIMOBILE-0008 sont inclus dans le commit de clôture de 0.8.
 - **Aucun push** n'a été effectué à ce stade.
 - **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
@@ -150,10 +170,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Décisions ouvertes
 
-- Reprise de la base Expo existante (méthode, périmètre, version SDK) ; conditionne
-  `expo-router`. Audit (YUNIMOBILE-0006) et diagnostic statique (YUNIMOBILE-0007)
-  terminés : **option A (extraction) hypothèse principale**, sans décision
-  définitive.
+- Reprise de la base Expo existante : **décidée** (CTO, 2026-10-02, YUNIMOBILE-0008).
+  Option A sous forme d'extraction contrôlée : réutiliser écrans, routes, composants
+  et logique ; ne pas copier aveuglément la structure du monorepo ; application Expo
+  autonome dans `yunimobile` ; remplacement progressif des imports `@yunicity/*` par
+  des modules repris ou des packages au partage justifié ; une seule résolution React
+  compatible SDK 54 ; configuration Metro adaptée à un projet autonome ; alignement
+  des quatre correctifs SDK 54 ; mobile du monorepo gardé en référence en lecture
+  seule jusqu'à la parité.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
 - Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
@@ -165,7 +189,6 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-Diagnostic de compatibilité Expo (`expo-doctor`, `expo install --check`) dans un
-ticket séparé (YUNIMOBILE-0008), réutilisant la copie isolée.
+**YUNIMOBILE-0009 — preuve d'extraction autonome et bundle Metro Android.**
 
 Non lancé : en attente de décision.
