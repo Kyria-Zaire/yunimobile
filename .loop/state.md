@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-01 22:41 (Europe/Paris, UTC+02:00)
+**Mis à jour le** : 2026-10-02 02:46 (Europe/Paris, UTC+02:00)
 
 ## Étape en cours
 
@@ -14,10 +14,30 @@
 | 0.4 Skills / plugins — audit et sélection | YUNIMOBILE-0004 | Terminé — audit terminé, installation non réalisée |
 | 0.5 Skills — installation de deux skills adaptés | YUNIMOBILE-0005 | Terminé |
 | 0.6 Audit de reprise de la base mobile Expo | YUNIMOBILE-0006 | Terminé — audit terminé, stratégie de reprise non décidée |
+| 0.7 Diagnostic typecheck et lint de la base mobile | YUNIMOBILE-0007 | Terminé |
 
 ## Ticket actif
 
 Aucun. Aucun ticket suivant n'est lancé.
+
+### Historique — YUNIMOBILE-0007
+
+- Fichier : `.loop/tickets/YUNIMOBILE-0007.md`. Rapport :
+  `docs/engineering/mobile-static-diagnostics.md`.
+- **Commit de départ** : `cd5bab271d1caad528b1fc6d1c6eb2476a1887d5`.
+- Source au SHA audité `ee57ce1d`, inchangée ; diagnostics dans une copie isolée
+  conservée pour YUNIMOBILE-0008 : `C:\tmp\yunimobile-0007-diag\` (journaux dans `logs`).
+- Typecheck : exit 0, 0 erreur.
+- Lint Expo par défaut (`app`, `components`) : exit 0, 0 warning.
+- Lint étendu (package complet) : exit 0, 1 warning
+  (`react-hooks/exhaustive-deps`, `hooks/use-search.ts:115`), documenté comme
+  dette, non corrigé.
+- Revue CTO : audit statique approuvé ; les résultats renforcent l'option A sans
+  décider la stratégie.
+- Blocage disque initial levé (sept `.next-build` de worktrees supprimés avec
+  autorisation, gain 3,98 Gio).
+- Limites : dépendances non vérifiées contre le lockfile ; aucun build ni contrôle
+  de compatibilité Expo. Commit local de clôture, sans push.
 
 ### Historique — YUNIMOBILE-0006
 
@@ -115,6 +135,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Les fichiers de YUNIMOBILE-0004 sont inclus dans le commit de clôture de 0.4.
 - Les fichiers de YUNIMOBILE-0005 sont inclus dans le commit de clôture de 0.5.
 - Les fichiers de YUNIMOBILE-0006 sont inclus dans le commit de clôture de 0.6.
+- Les fichiers de YUNIMOBILE-0007 sont inclus dans le commit de clôture de 0.7.
 - **Aucun push** n'a été effectué à ce stade.
 - **Aucune application, dépendance ni plugin** n'est installé dans le dépôt.
 - Skills documentaires `yunicity-verification` et `yunicity-debugging` présents
@@ -130,7 +151,9 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 ## Décisions ouvertes
 
 - Reprise de la base Expo existante (méthode, périmètre, version SDK) ; conditionne
-  `expo-router`. Audit terminé (YUNIMOBILE-0006) ; stratégie non décidée.
+  `expo-router`. Audit (YUNIMOBILE-0006) et diagnostic statique (YUNIMOBILE-0007)
+  terminés : **option A (extraction) hypothèse principale**, sans décision
+  définitive.
 - Distribution des packages partagés entre web et mobile.
 - Traitement de `debug.keystore` (actuellement ignoré comme tous les keystores).
 - Identité Git (adresse e-mail d'auteur) à corriger avant toute publication.
@@ -142,7 +165,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-Diagnostic typecheck / lint de la base mobile existante, sans modification de la
-source (méthode d'exécution à autoriser).
+Diagnostic de compatibilité Expo (`expo-doctor`, `expo install --check`) dans un
+ticket séparé (YUNIMOBILE-0008), réutilisant la copie isolée.
 
 Non lancé : en attente de décision.
