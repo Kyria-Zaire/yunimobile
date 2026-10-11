@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-11 23:14 (Europe/Paris) — clôture YUNIMOBILE-0011C
+**Mis à jour le** : 2026-10-12 01:05 (Europe/Paris) — clôture audit YUNIMOBILE-0011D
 
 ## Étape en cours
 
@@ -22,16 +22,34 @@
 | 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
 | 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
 | 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
+| 0.11D Audit migration Mapbox → Google Maps | YUNIMOBILE-0011D | Terminé — audit réalisé ; CONDITIONAL GO pour l’implémentation |
 
 ## Ticket actif
 
-Aucun. YUNIMOBILE-0011C **clôturé** (CTO) : environnement et stratégie d’appareil
-diagnostiqués ; préparation native conditionnelle (**CONDITIONAL READY**).
-Branche `chore/yunimobile-0011c-android-readiness` ; ticket
-`.loop/tickets/YUNIMOBILE-0011C.md` ; rapport
-`docs/engineering/android-device-readiness.md` ; preuve Cursor
-`docs/engineering/agent-setup.md`. Commit local de clôture autorisé ; aucun push,
-merge, ni ticket suivant lancé.
+Aucun. YUNIMOBILE-0011D **audit clôturé** (CTO) : migration cartographique
+auditee ; décision **CONDITIONAL GO** pour l’implémentation. Branche
+`feat/yunimobile-0011d-google-maps` ; ticket
+`.loop/tickets/YUNIMOBILE-0011D.md` ; rapport
+`docs/engineering/google-maps-migration-audit.md`. Commit local documentaire
+autorisé ; aucun push. **Prochaine action** : implémentation contrôlée de 0011D
+(non lancée).
+
+### Résultats — YUNIMOBILE-0011D
+
+- Préconditions : `main` @ `b4ffaf4e597a645b3c5d6c39768251cc33a7ad31` ;
+  branche 0011D ; audit lecture seule.
+- Inventaire Mapbox mobile + référence Web Maps JS (`ee57ce1…` inchangé).
+- Version : doc Expo **SDK 54** → `react-native-maps` **1.20.1** (pas « latest ») ;
+  install future `pnpm expo install react-native-maps` + vérification version
+  résolue — **aucune installation** dans l’audit.
+- Expo Go : inclus ; Android fournisseur Google natif ; iOS carte ≠ preuve Google ;
+  Google iOS Yunicity = clé restreinte + build natif ; `PROVIDER_GOOGLE` Expo Go
+  iOS **non affirmé** sans runtime.
+- Découpage : **0011D impl** (code/deps, sans clé ni build) → **0011E**
+  (Java/AVD) → **0011F** (clés + dev build Android + preuve Google) ; iOS build
+  ultérieur.
+- Décision : **CONDITIONAL GO** (confirmé CTO). Critères d’implémentation listés
+  dans le rapport.
 
 ### Résultats — YUNIMOBILE-0011C
 
@@ -366,15 +384,16 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011D** — migration cartographique mobile Mapbox → Google Maps
-   (audit Expo SDK 54 ; clés Android/iOS ; remplacement et suppression
-   `@rnmapbox/maps` ; retrait `EXPO_PUBLIC_MAPBOX_*` ; parité fonctionnalités ;
-   typecheck, lint, Expo Doctor ; pas de duplication FastAPI).
-2. Puis **YUNIMOBILE-0011E** — session Java/Android ; création contrôlée AVD
-   API 35 sans téléchargement ; vérification de démarrage ; sans build applicatif.
-3. Puis **YUNIMOBILE-0011F** — premier dev build Android et lancement réel.
+1. **Implémentation contrôlée de YUNIMOBILE-0011D** — remplacer Mapbox par
+   `react-native-maps` (cible SDK 54 **1.20.1** via `pnpm expo install`,
+   vérifier version résolue) **sans** clé Google ni build natif ; critères dans
+   le rapport d’audit. **Non lancée.**
+2. Puis **YUNIMOBILE-0011E** — Java/Android + AVD API 35.
+3. Puis **YUNIMOBILE-0011F** — clés Google sécurisées, premier dev build Android,
+   preuve fournisseur Google.
+4. Build iOS : ticket ultérieur dédié.
 
-Propositions uniquement ; aucun de ces tickets n’est lancé.
+0011E et 0011F non lancés.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
