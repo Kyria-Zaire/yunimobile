@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-11 (Europe/Paris) — clôture YUNIMOBILE-0011B
+**Mis à jour le** : 2026-10-11 23:14 (Europe/Paris) — clôture YUNIMOBILE-0011C
 
 ## Étape en cours
 
@@ -10,7 +10,7 @@
 |---|---|---|
 | 0.1 Fichiers de base et fins de ligne | YUNIMOBILE-0001, YUNIMOBILE-0001A | Clôturée selon les rapports fournis |
 | 0.2 Doctrine commune et protocole du loop | YUNIMOBILE-0002 | Terminé |
-| 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé pour la configuration documentaire ; tests de session partiels (voir ci-dessous) |
+| 0.3 Adaptateurs IA | YUNIMOBILE-0003 | Terminé — test Cursor de chargement consignés (0011C) |
 | 0.4 Skills / plugins — audit et sélection | YUNIMOBILE-0004 | Terminé — audit terminé, installation non réalisée |
 | 0.5 Skills — installation de deux skills adaptés | YUNIMOBILE-0005 | Terminé |
 | 0.6 Audit de reprise de la base mobile Expo | YUNIMOBILE-0006 | Terminé — audit terminé, stratégie de reprise non décidée |
@@ -21,13 +21,39 @@
 | 0.10 Intégration permanente de l'application mobile | YUNIMOBILE-0010 | Terminé |
 | 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
 | 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
+| 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
 
 ## Ticket actif
 
-Aucun. YUNIMOBILE-0011B clôturé sur décision CTO : espace suffisant,
-aucune suppression effectuée. Aucun ticket suivant lancé.
-Ticket : `.loop/tickets/YUNIMOBILE-0011B.md` ; plan :
-`docs/engineering/disk-cleanup-plan.md`.
+Aucun. YUNIMOBILE-0011C **clôturé** (CTO) : environnement et stratégie d’appareil
+diagnostiqués ; préparation native conditionnelle (**CONDITIONAL READY**).
+Branche `chore/yunimobile-0011c-android-readiness` ; ticket
+`.loop/tickets/YUNIMOBILE-0011C.md` ; rapport
+`docs/engineering/android-device-readiness.md` ; preuve Cursor
+`docs/engineering/agent-setup.md`. Commit local de clôture autorisé ; aucun push,
+merge, ni ticket suivant lancé.
+
+### Résultats — YUNIMOBILE-0011C
+
+- Sync propre Cursor : HEAD de départ = origin/main =
+  `e62d4f7bed657e7933efae641f25175a09f0facc` ; merge PR #3 OK ; branche 0011C.
+- **Test de chargement Cursor réussi** (session neuve) : `00-project-entry.mdc` et
+  `AGENTS.md` dans `always_applied_workspace_rules` ; découverte prouvée pour
+  cette session seulement (voir `agent-setup.md`).
+- **Google Maps définitif** Web et Mobile ; **Mapbox hérité, à retirer**
+  (`@rnmapbox/maps`) ; aucun token/build/env Mapbox ; FastAPI commun non dupliqué.
+- **Java 21 / JBR 21 présents** ; choix définitif du JDK **reporté** (0011E) ;
+  `JAVA_HOME` et variables Android **non configurées** (persistantes).
+- **Aucun Android physique** détecté (`adb devices -l` a démarré le daemon) ;
+  **image API 35 disponible**, **aucun AVD** ; cmdline-tools absents.
+- Espace diagnostic > 12 Gio. Aucune config persistante, AVD, build, Studio,
+  émulateur, Expo/Gradle.
+- Décision opérationnelle : **CONDITIONAL READY**. Contenu approuvé après
+  corrections CTO.
+- **Prochain ticket** : **YUNIMOBILE-0011D** — migration Mapbox → Google Maps.
+  **0011E** et **0011F** non lancés.
+- Clôture : indexation des quatre fichiers autorisés + commit local
+  `docs: prepare Android device strategy` ; aucun push/merge.
 
 ### Résultats — YUNIMOBILE-0011B
 
@@ -323,13 +349,32 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Plugin Superpowers 6.4.1 installé globalement (Claude Code, portée utilisateur,
   hook `SessionStart`) : **conservé inchangé** ; coexistence avec les versions
   locales adaptées documentée ; traitement du doublon à décider.
-- Skills pour Cursor : non configurés, reportés.
-- Test Cursor de 0.3 : reporté jusqu'au 7 octobre.
+- Skills pour Cursor : non configurés.
+- Test Cursor de chargement adaptateur (0.3) : **consigné** le 2026-10-11
+  (YUNIMOBILE-0011C) — découverte prouvée pour cette session, pas une garantie
+  générale de respect des consignes.
+- Cartographie : **Google Maps** fournisseur **définitif** Web + Mobile ;
+  Mapbox **hérité, à retirer** ; aucun token/build/env Mapbox ; FastAPI commun.
+  Compatibilité Expo Go iPhone + Google Maps : **à prouver**, non affirmée.
+- Cible **probable** premier dev build : émulateur Android API 35 ; AVD après
+  0011D (en 0011E) ; iPhone Expo Go pour tests compatibles ; iOS/EAS séparé ;
+  aucun Android physique détecté.
+- JDK : 21.0.6 + JBR 21.0.8 disponibles ; `JAVA_HOME` absent ; JDK 17 non trouvé ;
+  installation JDK 17 non obligatoire tant que la chaîne générée ne l’exige pas ;
+  choix définitif en 0011E.
+- cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
 
 ## Prochaine étape proposée
 
-YUNIMOBILE-0011C — configuration Java/Android et vérification d'un appareil
-physique, sans build dans un premier temps. Proposition uniquement, non lancée.
+1. **YUNIMOBILE-0011D** — migration cartographique mobile Mapbox → Google Maps
+   (audit Expo SDK 54 ; clés Android/iOS ; remplacement et suppression
+   `@rnmapbox/maps` ; retrait `EXPO_PUBLIC_MAPBOX_*` ; parité fonctionnalités ;
+   typecheck, lint, Expo Doctor ; pas de duplication FastAPI).
+2. Puis **YUNIMOBILE-0011E** — session Java/Android ; création contrôlée AVD
+   API 35 sans téléchargement ; vérification de démarrage ; sans build applicatif.
+3. Puis **YUNIMOBILE-0011F** — premier dev build Android et lancement réel.
+
+Propositions uniquement ; aucun de ces tickets n’est lancé.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 

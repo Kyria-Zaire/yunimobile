@@ -82,8 +82,8 @@ réexécutés lors de la clôture de YUNIMOBILE-0005 :
 Ces résultats montrent la découverte des skills et un comportement conforme sur ces
 scénarios fictifs. Ils ne garantissent pas, en général, le respect des instructions
 (voir « Limite de sécurité »). Superpowers global est resté inchangé pendant ces
-tests ; sa coexistence reste documentée dans `skills-provenance.md`. Cursor : non
-configuré, reporté.
+tests ; sa coexistence reste documentée dans `skills-provenance.md`. Skills Cursor :
+toujours non configurés (hors périmètre de ce dépôt).
 
 ## Ce qui n'est pas configuré
 
@@ -125,4 +125,27 @@ consignés dans YUNIMOBILE-0004.
 |---|---|---|---|
 | Claude Code | rapport en conversation | 2026-10-01 | Instructions du projet et import présents dans le contexte initial, selon le rapport de l'agent sans outil |
 | Codex | rapport en conversation | 2026-10-01 | Doctrine présente, comportement conforme ; mécanisme natif non vérifiable |
-| Cursor | reportée (demande de Kyria, jusqu'au 7 octobre) | — | — |
+| Cursor | rapport de session (YUNIMOBILE-0011C) | 2026-10-11 | Voir ci-dessous |
+
+#### Rapport de session Cursor — 2026-10-11 (YUNIMOBILE-0011C)
+
+Session **neuve** Cursor à la racine du dépôt, avant exécution du ticket 0011C :
+
+- `.cursor/rules/00-project-entry.mdc` présent dans
+  `always_applied_workspace_rules` (injection automatique Cursor).
+- `AGENTS.md` injecté automatiquement dans la même section
+  `always_applied_workspace_rules`.
+- L’agent a restitué correctement : état du loop (pas de ticket actif au moment
+  du test de chargement), doctrine Git, règles de sécurité, et interdiction de
+  dupliquer le backend FastAPI, en citant la provenance des consignes.
+- `git status --short` propre pendant le test de chargement (aucune modification
+  pour déclencher ou « forcer » le chargement).
+- Aucun fichier lu manuellement pour déclencher le chargement des règles : les
+  indices venaient du contexte système Cursor, pas d’un `Read` préalable de
+  `00-project-entry.mdc` / `AGENTS.md` destiné à les charger.
+- Ce résultat **prouve la découverte / le chargement automatique dans cette
+  session**. Il **ne garantit pas** le respect futur de toutes les consignes
+  (voir « Limite de sécurité »).
+
+Conservé à la clôture de YUNIMOBILE-0011C (2026-10-11) : test de chargement
+Cursor **réussi** pour cette session ; skills Cursor toujours non configurés.
