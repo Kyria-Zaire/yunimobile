@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-02 (Europe/Paris) — audit YUNIMOBILE-0011A
+**Mis à jour le** : 2026-10-11 (Europe/Paris) — clôture YUNIMOBILE-0011B
 
 ## Étape en cours
 
@@ -20,11 +20,44 @@
 | 0.9A Hygiène de l'historique Git avant publication | YUNIMOBILE-0009A | Terminé |
 | 0.10 Intégration permanente de l'application mobile | YUNIMOBILE-0010 | Terminé |
 | 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
+| 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
 
 ## Ticket actif
 
-Aucun. YUNIMOBILE-0011A clôturé : audit réalisé ; premier dev build bloqué.
-Aucun ticket suivant lancé.
+Aucun. YUNIMOBILE-0011B clôturé sur décision CTO : espace suffisant,
+aucune suppression effectuée. Aucun ticket suivant lancé.
+Ticket : `.loop/tickets/YUNIMOBILE-0011B.md` ; plan :
+`docs/engineering/disk-cleanup-plan.md`.
+
+### Résultats — YUNIMOBILE-0011B
+
+- Préconditions propres Codex : main, HEAD = origin/main =
+  `3ae8bdbb970b0f4e0df796a6864e405a05ba0241`, arbre propre.
+- Branche `chore/yunimobile-0011b-disk-cleanup` créée ; seuls trois documents
+  autorisés écrits pendant la préparation, sans indexation, commit ni push à ce stade.
+- Trois mesures sur 40 secondes ; mesure finale 2026-10-11 21:11:41 Europe/Paris :
+  16 508 424 192 octets libres (15,375 Gio). Minimum de 12 Gio déjà atteint :
+  ensemble de suppression minimal vide.
+- Lots A/B : cinq artefacts historiques et sept caches locaux ; allocations
+  26 490 816 + 134 962 416 octets, espace projeté 15,525 Gio.
+- 16 Gio non prouvés par les lots recommandables aujourd'hui. C1 VSIX seul :
+  scénario 16,409 Gio après fermeture autorisée et inactivité vérifiée ;
+  usage actuellement incertain, aucun gain recommandé. Autres C/D exclus.
+- Store pnpm, dépendances actives, dépôts Yunicity, Studio/SDK et autres
+  protections conservés. Zéro pip-unpack compté, aucun ouvert.
+- Contrôles propres en lecture seule, auto-vérification documentaire ; aucune
+  revue indépendante. Aucune suppression, installation, ADB, build ou arrêt.
+- Décision CTO : terminé — espace suffisant, aucune suppression effectuée.
+  15,375 Gio disponibles à la mesure retenue pour la clôture ; minimum de 12 Gio
+  atteint. Aucun nettoyage exécuté ; ne pas exécuter les lots A/B/C/D.
+  CachedExtensionVSIXs intact, VS Code et installateurs actifs dans le relevé.
+  Écart avec la mesure précédente non attribué au ticket, aucun nettoyage effectué.
+- Remesurer avant génération/build Android ; ne pas commencer sous 12 Gio.
+  Pendant le build, arrêter si l'espace approche 5 Gio lorsque cela peut être
+  fait sans corrompre une opération en cours. Aucun build lancé ici.
+- Clôture autorisée : indexation explicite des trois documents, contrôles de
+  format/diff/index, commit local `docs: assess disk capacity for Android build`
+  avec `Ticket: YUNIMOBILE-0011B`. Aucun push, merge, installation ou suppression.
 
 ### Résultats — YUNIMOBILE-0011A
 
@@ -295,10 +328,8 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-Revue CTO de YUNIMOBILE-0011A, puis YUNIMOBILE-0011B proposé : libération d'espace
-et validation de la cible Android. Aucun ticket suivant lancé par l'audit.
-
-Non lancé : en attente de décision.
+YUNIMOBILE-0011C — configuration Java/Android et vérification d'un appareil
+physique, sans build dans un premier temps. Proposition uniquement, non lancée.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
