@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 23:09 (Europe/Paris) — YUNIMOBILE-0011E-D terminé ; checkpoint SDK 57 commit local ; SDK 58 non démarré
+**Mis à jour le** : 2026-10-12 23:56 (Europe/Paris) — YUNIMOBILE-0011E-E terminé ; Option E retenue ; 0011F-A non commencé
 
 ## Étape en cours
 
@@ -27,10 +27,31 @@
 | 0.11E-B Migration Expo SDK 54 → 55 | YUNIMOBILE-0011E-B | Terminé — migration statique Expo SDK 55 réussie ; fusionnée PR #7 (`9b96128…`) |
 | 0.11E-C Migration Expo SDK 55 → 56 | YUNIMOBILE-0011E-C | Terminé — migration statique Expo SDK 56 ; PR #8 fusionnée `a8fc4f5…` ; runtime/native non validés |
 | 0.11E-D Migration Expo SDK 56 → 57 | YUNIMOBILE-0011E-D | Terminé — migration statique Expo SDK 57 réussie ; runtime iPhone non exécuté (Expo Go 58 incompatible) |
+| 0.11E-E Audit SDK 58 et stratégie runtime | YUNIMOBILE-0011E-E | Terminé — audit SDK 58 et stratégie runtime réalisés ; Option E |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011E-E
+
+- **Terminé** — audit documentaire SDK 58 + stratégie runtime ; Option **E**
+  adoptée (CTO) ; Option **B** refusée.
+- Branche `docs/yunimobile-0011e-e-runtime-strategy` ; base `2bfa346…`.
+- SDK 58 : **beta / pré-stable** — projet maintenu sur **SDK 57**.
+- Android SDK 57 prioritaire ; iOS EAS **différé** ; adhésion Apple
+  Developer **non autorisée** ; aucune dépense Apple.
+- Aucune migration SDK 58 avant sortie stable et audit dédié.
+- Expo Go iPhone : annonce 58.0.0 (preuve utilisateur 2026-10-12) ;
+  **provenance non vérifiée**.
+- Tarifs / quotas EAS et Apple : sources officielles consultées le
+  **2026-10-12** (`expo.dev/pricing`, docs billing, Apple Developer) ;
+  valeurs **susceptibles d’évoluer** ; plafond Free builds iOS/mois
+  **non garanti durablement**.
+- Rapport : `docs/engineering/expo-sdk-58-runtime-strategy.md`.
+- Prochain ticket : **YUNIMOBILE-0011F-A** (env Android + AVD API 35) —
+  **non commencé** ; fichier non créé. **0011F-B** réservé au premier
+  runtime Android. SDK 58 et EAS iOS **non commencés**.
 
 ### Historique — YUNIMOBILE-0011E-D
 
@@ -451,14 +472,17 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   **réalisée** (0011D) ; Google Maps Android/iOS runtime **non prouvés** ;
   Mapbox retiré du chemin carte mobile ; helpers utils Mapbox conservés (Web) ;
   FastAPI commun.
-- Compatibilité Expo Go iPhone : **bloquée** (Go SDK 57 vs projet SDK 54) ;
-  runtime reporté après migration Expo SDK.
-- Cible **probable** premier dev build : émulateur Android API 35 ; AVD en
-  **0011F** ; development build Android en **0011G** ; iOS native ultérieur ;
-  aucun Android physique détecté.
+- Compatibilité Expo Go iPhone : **bloquée** (Go annonce SDK **58** vs projet
+  SDK **57**) ; provenance Go 58 **non vérifiée** ; runtime reporté.
+- Stratégie runtime : **Option E** retenue (CTO, 0011E-E). Projet sur
+  SDK **57** ; Android d’abord ; iOS EAS / Apple Developer différés ;
+  pas de migration SDK 58 beta ; pas de migration 58 avant stable + audit.
+- Cible prochain travail : **YUNIMOBILE-0011F-A** (AVD API 35) puis
+  **0011F-B** (premier runtime Android) ; iOS native ultérieur seulement
+  après autorisation séparée ; aucun Android physique détecté.
 - JDK : 21.0.6 + JBR 21.0.8 disponibles ; `JAVA_HOME` absent ; JDK 17 non trouvé ;
   installation JDK 17 non obligatoire tant que la chaîne générée ne l’exige pas ;
-  choix définitif en **0011F**.
+  choix définitif en **0011F-A**.
 - cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
 
 ### Détail technique — YUNIMOBILE-0011E-B (complément historique)
@@ -488,16 +512,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **Audit officiel de stabilité Expo SDK 58** versus stratégie
-   **development build** — **non lancé**.
-2. Publication / PR du checkpoint SDK **57** si applicable (hors clôture
-   locale).
-3. Puis **YUNIMOBILE-0011F** — Java/Android + AVD API 35.
-4. Puis **YUNIMOBILE-0011G** — premier development build Android.
-5. Validation iOS native : ticket ultérieur.
+1. **YUNIMOBILE-0011F-A** — environnement Android et AVD API 35
+   (**non commencé** ; fichier ticket non créé).
+2. **YUNIMOBILE-0011F-B** — premier runtime Android SDK 57 (réservé ;
+   non commencé).
+3. SDK 58 et EAS iOS : **non commencés** ; Apple Developer non autorisé ;
+   migration 58 uniquement après stable + audit dédié.
 
-SDK 58, 0011F et 0011G **non** démarrés. Runtime iPhone non exécuté
-(Go 58 ≠ projet 57).
+Runtime iPhone non exécuté (Go 58 ≠ projet 57 ; provenance Go non vérifiée).
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
