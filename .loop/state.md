@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 03:00 (Europe/Paris) — YUNIMOBILE-0011D : fix CodeRabbit recentrage (non commité)
+**Mis à jour le** : 2026-10-12 09:50 (Europe/Paris) — YUNIMOBILE-0011E-A terminé (CONDITIONAL GO CP1)
 
 ## Étape en cours
 
@@ -22,14 +22,17 @@
 | 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
 | 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
 | 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
-| 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — migration statique OK ; runtime reporté après migration Expo SDK |
+| 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — fusionné PR #5 (`381396fe…`) ; runtime reporté après migration Expo SDK |
+| 0.11E-A Audit migration Expo SDK 54→55→56→57 | YUNIMOBILE-0011E-A | Terminé — audit approuvé ; CONDITIONAL GO CP1 ; checkpoint 55 non démarré |
 
 ## Ticket actif
 
-Aucun — YUNIMOBILE-0011D **terminé**. Branche
-`feat/yunimobile-0011d-google-maps`. Décision : implémentation **statique**
-acceptée ; aucune affirmation runtime ; aucune affirmation Google Maps iOS ou
-Android. Rapport : `docs/engineering/google-maps-migration-audit.md` § I / § K.
+Aucun — YUNIMOBILE-0011E-A **terminé**. Branche
+`docs/yunimobile-0011e-expo-upgrade-audit`. Décision CTO : **CONDITIONAL GO**
+pour le futur checkpoint SDK 54→55 ; SDK 57 = cible finale ; aucun palier sauté ;
+SDK 56 contrôlé mais non durable ; maps réaligné à chaque palier ; Node
+24.18.1 conservé provisoirement ; Expo Go iPhone après CP SDK 57. Rapport :
+`docs/engineering/expo-sdk-57-upgrade-audit.md`.
 
 ### Résultats — YUNIMOBILE-0011D
 
@@ -54,12 +57,29 @@ Android. Rapport : `docs/engineering/google-maps-migration-audit.md` § I / § K
 - PR #5 : revue CodeRabbit — 1 diagnostic Minor (`event-map.tsx` L66,
   recentrage ville) **accepté CTO** ; warning Docstring Coverage 40 %
   **non bloquant** (pas de docstring artificielle).
-- Correction appliquée (non commitée) : `animateToRegion` après montage si
-  centre ville résolu change ; `initialRegion` conservé ; pas de `region`
-  contrôlée ; runtime mobile toujours non exécuté (décalage SDK).
-- Roadmap suivante (non lancée) : **0011E** (Expo SDK 54→55→56→57, un palier à
-  la fois) → **0011F** (Java/Android + AVD API 35) → **0011G** (premier
-  development build Android) ; validation iOS native = ticket ultérieur.
+- Correction recentrage : commit `abb84a2` ; thread CodeRabbit résolu ; PR #5
+  fusionnée en merge `381396fe…` (parents `b4ffaf4…` + `abb84a2…`) ; branche
+  feature distante conservée.
+- Diagnostic hors diff `MapView.onPress` (désélection) : **non traité** en
+  0011D — point UX futur carte.
+- Runtime mobile / Google Maps Android-iOS : toujours non prouvés (décalage SDK
+  au moment du test iPhone).
+
+### Résultats — YUNIMOBILE-0011E-A
+
+- Audit documentaire SDK **54 → 55 → 56 → 57** (sources Expo +
+  `bundledNativeModules` consultées **2026-10-12**) ; baseline locale : Expo
+  `~54.0.37`, RN `0.81.5`, `react-native-maps` `1.20.1`, `newArchEnabled: true`,
+  Node poste `v24.18.1`.
+- CTO : audit **approuvé** ; **CONDITIONAL GO** pour checkpoint 54→55 ;
+  SDK **57** cible finale ; aucun palier sauté ; SDK **56** contrôlé mais
+  **non durable** ; chaque palier = branche + contrôles + commit + PR ;
+  maps **réaligné à chaque palier** (matrice officielle) ; Node 24.18.1
+  conservé provisoirement (changement Node hors ticket) ; Expo Go iPhone
+  **après** checkpoint SDK 57.
+- **Non affirmé** : runtime, réussite future des migrations, Expo Go final,
+  support effectif Node 24 par toutes les deps.
+- Checkpoint SDK 55 / **0011E-B** : **non démarré**.
 
 ### Résultats — YUNIMOBILE-0011C
 
@@ -397,15 +417,15 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011E** — migration contrôlée Expo SDK **54 → 55 → 56 → 57**,
-   **un SDK à la fois**, avec contrôles à chaque palier. Ne pas sauter de
-   version ; ne pas démarrer ici.
-2. Puis **YUNIMOBILE-0011F** — environnement Java/Android et AVD API 35.
-3. Puis **YUNIMOBILE-0011G** — premier development build Android.
-4. Validation iOS native : ticket ultérieur dédié (pas Expo Go tant que le
-   projet n’est pas aligné SDK 57).
+1. **YUNIMOBILE-0011E-B** — migration contrôlée Expo SDK **54 → 55**
+   (branche dédiée, contrôles, commit, PR). **Non démarré ici.**
+2. Puis checkpoint SDK 56 (contrôlé, non durable) puis SDK 57 (cible finale).
+3. Test Expo Go iPhone **après** checkpoint SDK 57.
+4. Puis **YUNIMOBILE-0011F** — Java/Android + AVD API 35.
+5. Puis **YUNIMOBILE-0011G** — premier development build Android.
+6. Validation iOS native : ticket ultérieur.
 
-0011E, 0011F et 0011G non lancés.
+0011E-B, 0011F et 0011G non lancés.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
