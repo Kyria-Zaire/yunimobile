@@ -7,7 +7,6 @@
     "icon": "./assets/yunicity-mascot.png",
     "scheme": "yunicity",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yunicity.mobile"

@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 09:50 (Europe/Paris) — YUNIMOBILE-0011E-A terminé (CONDITIONAL GO CP1)
+**Mis à jour le** : 2026-10-12 14:35 (Europe/Paris) — aucun ticket actif ; 0011E-B en historique ; 0011E-C non démarré
 
 ## Étape en cours
 
@@ -23,16 +23,23 @@
 | 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
 | 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
 | 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — fusionné PR #5 (`381396fe…`) ; runtime reporté après migration Expo SDK |
-| 0.11E-A Audit migration Expo SDK 54→55→56→57 | YUNIMOBILE-0011E-A | Terminé — audit approuvé ; CONDITIONAL GO CP1 ; checkpoint 55 non démarré |
+| 0.11E-A Audit migration Expo SDK 54→55→56→57 | YUNIMOBILE-0011E-A | Terminé — audit approuvé ; CONDITIONAL GO CP1 |
+| 0.11E-B Migration Expo SDK 54 → 55 | YUNIMOBILE-0011E-B | Terminé — migration statique Expo SDK 55 réussie ; 0011E-C non démarré |
 
 ## Ticket actif
 
-Aucun — YUNIMOBILE-0011E-A **terminé**. Branche
-`docs/yunimobile-0011e-expo-upgrade-audit`. Décision CTO : **CONDITIONAL GO**
-pour le futur checkpoint SDK 54→55 ; SDK 57 = cible finale ; aucun palier sauté ;
-SDK 56 contrôlé mais non durable ; maps réaligné à chaque palier ; Node
-24.18.1 conservé provisoirement ; Expo Go iPhone après CP SDK 57. Rapport :
-`docs/engineering/expo-sdk-57-upgrade-audit.md`.
+Aucun — aucun ticket actif jusqu’au démarrage de **YUNIMOBILE-0011E-C**.
+
+### Historique — YUNIMOBILE-0011E-B
+
+- **Terminé** — migration **statique** Expo SDK 55 réussie (GO CTO).
+- Branche `feat/yunimobile-0011e-b-expo-sdk-55` ; commit de clôture
+  `d61444b74fbb9e5cbef2e884128b3aeeba950ef6` ; PR #7.
+- Runtime, build natif et Expo Go **non exécutés**.
+- Écart des quatre tentatives ENOENT (3 échecs + 4ᵉ hors protocole)
+  **conservé** ; ne pas reproduire comme procédure normale.
+- Rapport : `docs/engineering/expo-sdk-55-migration.md`.
+- **0011E-C** (SDK 56) **non démarré**.
 
 ### Résultats — YUNIMOBILE-0011D
 
@@ -415,17 +422,42 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   choix définitif en **0011F**.
 - cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
 
+### Détail technique — YUNIMOBILE-0011E-B (complément historique)
+
+- Migration SDK **54 → 55** : Expo `~55.0.31`, React `19.2.0`, RN `0.83.10`,
+  Router `~55.0.18`, maps `1.27.2` ; `newArchEnabled` retiré.
+- Baseline : incident `npm config get registry` (warn `node-linker`) classé
+  non bloquant CTO — incompatibilité lecture npm/pnpm ; `.npmrc` inchangé ;
+  registre confirmé par `pnpm config get registry`.
+- Install : 3 ENOENT Windows/pnpm incrémentaux ; **4ᵉ action** (clean
+  `node_modules`) **hors protocole** (limite 3 dépassée) mais réussie ;
+  **ne pas** reproduire comme procédure normale ; 0011E-C/D : arrêt + décision
+  CTO ; clean `node_modules` à prévoir **dès le ticket** si besoin.
+- Gates exit 0 : typecheck ; lint ; `expo install --check` ; expo-doctor
+  **1.20.4** 20/20 ; export Android hors dépôt (1845 modules) ; pas de Mapbox ;
+  `git diff --check`.
+- Complément / finalisation revue CTO (2026-10-12 13:15–13:25) : **sans**
+  réinstall, **sans** modification deps/config, **sans** relancer export/doctor.
+  - Provenance doctor : version/registre/intégrité artefact **vérifiables** ;
+    limite lien process (`@latest`, corrélation) ; pin obligatoire ensuite.
+  - Typecheck sans `.expo` : exit **0** ; `fc.exe` exit 1 = mtimes dossiers ;
+    empreintes fichiers **identiques** → restauration conforme.
+- GO CTO clôture (2026-10-12 13:43) : ticket **terminé** — migration
+  statique Expo SDK 55 réussie ; runtime / build natif / Expo Go **non
+  exécutés** ; écart des quatre tentatives **conservé**.
+- **0011E-C** (SDK 56) **non démarré**.
+
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011E-B** — migration contrôlée Expo SDK **54 → 55**
-   (branche dédiée, contrôles, commit, PR). **Non démarré ici.**
-2. Puis checkpoint SDK 56 (contrôlé, non durable) puis SDK 57 (cible finale).
+1. **YUNIMOBILE-0011E-C** — checkpoint SDK **56** (contrôlé, non durable) —
+   **non démarré**.
+2. Puis checkpoint SDK **57**.
 3. Test Expo Go iPhone **après** checkpoint SDK 57.
 4. Puis **YUNIMOBILE-0011F** — Java/Android + AVD API 35.
 5. Puis **YUNIMOBILE-0011G** — premier development build Android.
 6. Validation iOS native : ticket ultérieur.
 
-0011E-B, 0011F et 0011G non lancés.
+0011E-C, 0011F et 0011G non lancés.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
