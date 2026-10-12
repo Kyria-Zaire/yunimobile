@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 20:05 (Europe/Paris) — YUNIMOBILE-0011E-C terminé ; checkpoint SDK 56 commit local ; SDK 57 non démarré
+**Mis à jour le** : 2026-10-12 20:55 (Europe/Paris) — YUNIMOBILE-0011E-C ; PR #8 + correctif CodeRabbit ; SDK 57 non démarré
 
 ## Étape en cours
 
@@ -25,7 +25,7 @@
 | 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — fusionné PR #5 (`381396fe…`) ; runtime reporté après migration Expo SDK |
 | 0.11E-A Audit migration Expo SDK 54→55→56→57 | YUNIMOBILE-0011E-A | Terminé — audit approuvé ; CONDITIONAL GO CP1 |
 | 0.11E-B Migration Expo SDK 54 → 55 | YUNIMOBILE-0011E-B | Terminé — migration statique Expo SDK 55 réussie ; fusionnée PR #7 (`9b96128…`) |
-| 0.11E-C Migration Expo SDK 55 → 56 | YUNIMOBILE-0011E-C | Terminé — migration statique Expo SDK 56 réussie ; exception Hermes V1 transitoire ; runtime/native non validés |
+| 0.11E-C Migration Expo SDK 55 → 56 | YUNIMOBILE-0011E-C | Terminé — migration statique Expo SDK 56 ; PR #8 ; 2 diagnostics CodeRabbit corrigés ; nitpick refusé ; runtime/native non validés |
 
 ## Ticket actif
 
@@ -35,17 +35,22 @@ Aucun.
 
 - **Terminé** — migration **statique** Expo SDK 56 réussie (GO CTO), avec
   exception Hermes V1 **transitoire** ; aucune validation runtime ou native.
-- Branche `feat/yunimobile-0011e-c-expo-sdk-56` ; base `9b96128…` (main).
+- Branche `feat/yunimobile-0011e-c-expo-sdk-56` ; base `9b96128…` (main) ;
+  PR #8 ouverte ; SHA publié `5d8aad2…` (amend de `7791b1f…` pour retirer
+  Co-Authored-By ; tree identique).
 - Versions : Expo **~56.0.23** ; React **19.2.3** ; RN **0.85.3** ; Router
   **~56.2.21** ; react-native-maps **1.27.2**.
-- Gates : lint OK ; typecheck OK ; export Android OK ; `expo install --check`
+- Gates clôture + rejeu correctif : lint OK ; typecheck OK (± `.expo`,
+  MISMATCH=0) ; export Android OK (1997 modules) ; `expo install --check`
   OK ; expo-doctor **21/22**, seul **HermesV1VersionCheck**.
 - Tentatives 3/3 : (1) `@expo/dom-webview` ; (2) correction lint ; (3)
   correction invariants D1–D15. Relance réseau Doctor : **vérification
   uniquement**, pas une 4ᵉ correction.
-- Runtime, build natif et Expo Go **non exécutés**.
+- CodeRabbit PR #8 : **2 Minor acceptés** (`refreshInFlightRef` tribes ;
+  decline invitations sans `items: []`) ; **nitpick `loadBundle` refusé**
+  (pas de défaut fonctionnel ; élargirait le diff).
+- Runtime, build natif et Expo Go **non exécutés** (toujours).
 - SDK **56 interdit à la publication** (palier intermédiaire).
-- Push **non** effectué dans la clôture.
 - Sauvegarde SDK 55 conservée :
   `C:\tmp\yunimobile-0011e-c-node_modules-sdk55-backup`.
 - Rapport : `docs/engineering/expo-sdk-56-migration.md`.

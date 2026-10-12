@@ -74,13 +74,23 @@ export function TribeInvitationsSectionMobile() {
     setBusyId(invitation.id);
     const dataGen = ++dataGenRef.current;
     try {
-      await api.tribes.declineTribeInvitation(invitation.id);
+      try {
+        await api.tribes.declineTribeInvitation(invitation.id);
+      } catch {
+        // Decline failed: keep the current list; no dedicated error UI exists.
+        return;
+      }
       const data = await fetchInvitations();
       if (!mountedRef.current || dataGen !== dataGenRef.current) return;
       setResource({ key: invitationsKey, items: data.items });
     } catch {
+      // Decline succeeded but refetch failed: drop only the confirmed invitation.
       if (!mountedRef.current || dataGen !== dataGenRef.current) return;
-      setResource({ key: invitationsKey, items: [] });
+      setResource((prev) =>
+        prev?.key === invitationsKey
+          ? { ...prev, items: prev.items.filter((i) => i.id !== invitation.id) }
+          : prev,
+      );
     } finally {
       if (mountedRef.current) {
         setBusyId(null);

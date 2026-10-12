@@ -104,6 +104,7 @@ export default function TribesTabScreen() {
   const dataGenRef = useRef(0);
   const refreshGenRef = useRef(0);
   const loadMoreGenRef = useRef(0);
+  const refreshInFlightRef = useRef(false);
 
   const fetchTribesPage = useCallback(
     async (pageNum: number) => {
@@ -123,6 +124,7 @@ export default function TribesTabScreen() {
       dataGenRef.current += 1;
       refreshGenRef.current += 1;
       loadMoreGenRef.current += 1;
+      refreshInFlightRef.current = false;
     };
   }, []);
 
@@ -151,6 +153,7 @@ export default function TribesTabScreen() {
     const refreshGen = ++refreshGenRef.current;
     const dataGen = ++dataGenRef.current;
     const key = city;
+    refreshInFlightRef.current = true;
     setRefreshing(true);
     try {
       const data = await fetchTribesPage(1);
@@ -170,6 +173,9 @@ export default function TribesTabScreen() {
           : { key, items: [], page: 1, total: 0, error: TRIBES_ERROR },
       );
     } finally {
+      if (refreshGen === refreshGenRef.current) {
+        refreshInFlightRef.current = false;
+      }
       if (mountedRef.current && refreshGen === refreshGenRef.current) {
         setRefreshing(false);
       }
@@ -178,7 +184,13 @@ export default function TribesTabScreen() {
 
   function loadMore() {
     const current = resource?.key === city ? resource : null;
-    if (!current || loadingMore || current.items.length >= current.total) {
+    if (
+      !current ||
+      loadingMore ||
+      refreshing ||
+      refreshInFlightRef.current ||
+      current.items.length >= current.total
+    ) {
       return;
     }
     const loadMoreGen = ++loadMoreGenRef.current;

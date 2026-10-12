@@ -6,7 +6,8 @@
 - **Décision** : **terminé** — migration statique SDK 56 réussie ; exception Hermes V1 transitoire ; runtime/native non validés
 - **Nature** : palier **intermédiaire** (pas la cible finale) ; SDK **57 non commencé**
 - **Publication / release SDK 56** : **interdite**
-- **Commit** : clôture locale GO CTO (cette étape) ; **push non** effectué ici
+- **Commit** : clôture `5d8aad2…` (amend sans Co-Authored-By) ; PR #8 ;
+  correctif CodeRabbit (2 diagnostics) sur la même branche
 
 ## 1. Versions avant / après
 
@@ -665,3 +666,74 @@ Upgrade to React Native 0.86.2 or later, which includes the fixed Hermes version
 - Index vide ; aucun fichier applicatif modifié pendant la vérif
 - `git diff --check` : **0**
 - SDK 57 **non commencé** ; pas de push/rollback ici
+
+## 15. Publication PR #8 et correctif CodeRabbit (2026-10-12)
+
+### 15.1 Écart de SHA clôture
+
+| | Ancien | Publié |
+|---|---|---|
+| Commit | `7791b1ffd27b2ff66e062eb2d38e2c629ba3f9d5` | `5d8aad24373ff674611162a1a02dbc90417ca30e` |
+| Tree | `ee078898bed0a00f4804d4e10ac1d671a6b34bdd` | **identique** |
+| Parent | `9b961280…` | **identique** |
+| Message | + `Co-authored-by: Cursor <…>` | sans Co-Authored-By |
+| Diff `7791b1f..5d8aad2` | **vide** | |
+
+Cause : **amend** local pour retirer la ligne Co-Authored-By injectée par les
+hooks ; aucun changement de contenu applicatif.
+
+### 15.2 Diagnostics CodeRabbit
+
+| # | Sévérité | Fichier | Décision |
+|---|---|---|---|
+| 1 | Minor | `apps/mobile/app/(protected)/(tabs)/tribes/index.tsx` | **Accepté** |
+| 2 | Minor | `apps/mobile/components/tribes/tribe-invitations-section.tsx` | **Accepté** |
+| 3 | Trivial (nitpick) | `apps/mobile/app/(protected)/tribes/[slug].tsx` | **Refusé** |
+
+Nitpick refusé : duplication initiale acceptée dans cette PR — aucun défaut
+fonctionnel démontré ; factoriser via `loadBundle` élargirait le diff après
+validation des invariants.
+
+### 15.3 Corrections appliquées
+
+1. **tribes/index.tsx** — `refreshInFlightRef` positionné avant le fetch refresh,
+   libéré uniquement par le refresh correspondant, invalidé au cleanup ;
+   `loadMore` consulte le ref **et** `refreshing` avant de créer sa requête ;
+   un refresh incrémente toujours `dataGenRef` (invalide un loadMore antérieur).
+2. **tribe-invitations-section.tsx** — échec de `decline` : liste inchangée
+   (pas de `items: []`) ; succès : refetch inchangé ; échec refetch après
+   decline OK : retire seulement l’invitation confirmée ; gardes
+   `mountedRef` / `dataGenRef` conservées. Aucun mécanisme d’erreur UI dédié
+   n’existait pour decline.
+
+### 15.4 Scénarios (relecture structurelle)
+
+| Scénario | Résultat |
+|---|---|
+| refresh puis loadMore | loadMore bloqué (`refreshInFlightRef` / `refreshing`) |
+| loadMore puis refresh | refresh incrémente `dataGen` → page loadMore ignorée |
+| double refresh | seul le `refreshGen` courant libère spinner + ref |
+| échec refresh | erreur UI ; items conservés si key match ; spinner libéré |
+| unmount pendant refresh/loadMore | cleanup invalide gens + `refreshInFlightRef` |
+| decline réussi | refetch liste (UX inchangée) |
+| decline échoué | liste conservée ; `busyId` libéré |
+| double action decline | `busyId` désactive les boutons |
+| unmount pendant decline | `mountedRef` / `dataGen` bloquent setState |
+
+**Aucun test runtime.**
+
+### 15.5 Gates rejoués
+
+| Gate | Exit | Note |
+|---|---|---|
+| lint | **0** | |
+| typecheck | **0** | |
+| typecheck sans `.expo` | **0** | 5 fichiers ; MISMATCH=0 |
+| expo install --check | **0** | |
+| expo-doctor 1.20.4 | **1** | **21/22**, seul Hermes |
+| export Android | **0** | 1997 modules ; hors dépôt |
+| Mapbox / secrets / artefacts | OK | |
+| `git diff --check` | **0** | |
+
+Limites inchangées : runtime, build natif, Expo Go **non vérifiés** ;
+SDK 56 **non publiable** ; SDK 57 **non commencé**.
