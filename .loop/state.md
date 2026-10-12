@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 02:15 (Europe/Paris) — YUNIMOBILE-0011D terminé (runtime reporté)
+**Mis à jour le** : 2026-10-12 03:00 (Europe/Paris) — YUNIMOBILE-0011D : fix CodeRabbit recentrage (non commité)
 
 ## Étape en cours
 
@@ -51,6 +51,12 @@ Android. Rapport : `docs/engineering/google-maps-migration-audit.md` § I / § K
 - Google Maps Android/iOS : **toujours non prouvés**.
 - Décision CTO : ne pas upgrader Expo dans 0011D ; pas d’EAS Go / TestFlight ;
   migration SDK incrémentale en **0011E**.
+- PR #5 : revue CodeRabbit — 1 diagnostic Minor (`event-map.tsx` L66,
+  recentrage ville) **accepté CTO** ; warning Docstring Coverage 40 %
+  **non bloquant** (pas de docstring artificielle).
+- Correction appliquée (non commitée) : `animateToRegion` après montage si
+  centre ville résolu change ; `initialRegion` conservé ; pas de `region`
+  contrôlée ; runtime mobile toujours non exécuté (décalage SDK).
 - Roadmap suivante (non lancée) : **0011E** (Expo SDK 54→55→56→57, un palier à
   la fois) → **0011F** (Java/Android + AVD API 35) → **0011G** (premier
   development build Android) ; validation iOS native = ticket ultérieur.

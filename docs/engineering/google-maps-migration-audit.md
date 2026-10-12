@@ -449,3 +449,34 @@ reproduite ici.
   **54 → 55 → 56 → 57**, un palier à la fois, avec contrôles à chaque étape ;
   puis **0011F** (Java/Android + AVD API 35) ; **0011G** (premier development
   build Android) ; validation iOS native = ticket ultérieur.
+
+## L. PR #5 — diagnostic CodeRabbit recentrage ville (2026-10-12)
+
+| Point | Détail |
+|---|---|
+| Diagnostic reçu | **🟡 Minor** — `apps/mobile/components/map/event-map.tsx` ~L66 |
+| Contenu | `initialRegion` appliqué au montage seulement ; un changement réel de ville ne repositionne pas la carte |
+| Accepté CTO | **Oui** |
+| Warning Docstring Coverage 40 % | **Non bloquant** — aucune docstring artificielle ajoutée |
+| Contexte appelant | `EventMapScreen` : `profileCity` peut passer de `user?.city ?? DEFAULT_MAP_CITY` à `getProfileMe().city` |
+| Identifiants stables | prop `city` (string) ; centre résolu `latitude` / `longitude` / `zoom` via `resolveCityMapCenter` |
+
+### Correction appliquée (non commitée dans cette passe)
+
+- Conserver `initialRegion` ; **pas** de prop `region` contrôlée ; **pas** de remount `MapView`.
+- Après le premier effet : si `city` ou le centre résolu change →
+  `animateToRegion(cityToRegion(city))` (même construction que le bouton
+  recentrer) ; bbox attendue via `onRegionChangeComplete`.
+- Pas d’animation au montage initial ; dépendances = primitives stables.
+
+### Contrôles (cette passe)
+
+| Contrôle | Résultat |
+|---|---|
+| typecheck mobile | exit 0 |
+| lint app + components | exit 0 |
+| gate Node montage / changement centre | PASS |
+| expo export Android hors dépôt | exit 0 → `C:\tmp\yunimobile-0011d-dist-android-city-fix` |
+| `git diff --check` | exit 0 |
+| Mapbox sous `apps/mobile` | aucun match |
+| Runtime mobile | **non exécuté** (décalage SDK Expo Go 57 vs projet 54) |

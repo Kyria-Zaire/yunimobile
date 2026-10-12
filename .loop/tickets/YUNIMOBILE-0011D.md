@@ -3,7 +3,7 @@
 - **Statut** : terminé — migration statique Mapbox vers react-native-maps réalisée ;
   runtime reporté après migration Expo SDK
 - **Créé le** : 2026-10-12 (Europe/Paris)
-- **Mis à jour le** : 2026-10-12 02:15 (Europe/Paris)
+- **Mis à jour le** : 2026-10-12 03:00 (Europe/Paris)
 - **Référence** : audit CONDITIONAL GO ; passe d’implémentation contrôlée sur
   `feat/yunimobile-0011d-google-maps` @ base `f827895…`.
 
@@ -63,6 +63,18 @@ Remplacer l’implémentation Mapbox de la carte mobile par `react-native-maps`
 | 4 | Revue CTO intermédiaire A/B/C (sans Metro) | OK — audit § J ; pas de fix applicatif |
 | 5 | Test iPhone Expo Go (Kyria) | Blocage SDK Go 57 vs projet 54 ; bundle non chargé |
 | 6 | Clôture CTO | terminé — runtime reporté après migration Expo SDK |
+| 7 | PR #5 + revue CodeRabbit | 1 diagnostic Minor accepté CTO ; docstring warning non bloquant |
+| 8 | Correction recentrage ville | `animateToRegion` après montage ; contrôles OK ; non commité |
+
+## Diagnostic CodeRabbit (PR #5) — accepté CTO
+
+| Point | Détail |
+|---|---|
+| Reçu | Inline Minor — `apps/mobile/components/map/event-map.tsx` L66 : `initialRegion` au montage seulement ; changement de ville ne recentre pas |
+| Accepté | Oui (CTO) — contrat du composant : `city` / centre peut changer (`EventMapScreen` via `getProfileMe`) |
+| Non bloquant | Warning Docstring Coverage 40 % — **aucune** docstring artificielle ajoutée |
+| Correction | Effet post-montage : `animateToRegion(cityToRegion(city))` si centre résolu (`latitude` / `longitude` / `zoom`) ou `city` change ; pas de prop `region` contrôlée ; pas de remount ; bbox via `onRegionChangeComplete` |
+| Runtime | Toujours **non exécuté** (décalage Expo Go SDK 57 vs projet SDK 54) |
 
 ## Test iPhone Expo Go (preuve Kyria)
 
@@ -97,19 +109,29 @@ incrémentale).
 |---|---|
 | `pnpm --filter mobile run typecheck` | 0 |
 | `pnpm exec expo lint app components` | 0 |
-| `pnpm exec expo install --check` | 0 |
-| `npm exec --package=expo-doctor@1.20.4 -- expo-doctor` | 0 (18/18) |
-| `pnpm exec expo export --platform android` → `C:\tmp\yunimobile-0011d-dist-android` | 0 |
+| `pnpm exec expo install --check` | 0 (passe implémentation) |
+| `npm exec --package=expo-doctor@1.20.4 -- expo-doctor` | 0 (18/18, passe implémentation) |
+| `pnpm exec expo export --platform android` → `C:\tmp\yunimobile-0011d-dist-android` | 0 (passe implémentation) |
 
-Réutilisables à la clôture : aucun fichier applicatif modifié depuis ces
-contrôles (seule doc + arrêt Metro).
+### Contrôles — correction recentrage ville (cette passe)
+
+| Commande | Exit |
+|---|---|
+| `pnpm --filter mobile run typecheck` | 0 |
+| `pnpm --filter mobile exec expo lint app components` | 0 |
+| Contrôle ciblé gate montage / changement centre (Node, sans framework) | 0 |
+| `pnpm --filter mobile exec expo export --platform android` → `C:\tmp\yunimobile-0011d-dist-android-city-fix` | 0 |
+| `git diff --check` | 0 |
+| Recherche Mapbox sous `apps/mobile` | aucun match |
+| Cache / `.expo` / bundle indexé | aucun |
 
 ## Actions Git
 
 - **Commit 1** (audit) : `f827895` — documentation d’audit.
-- **Commit 2** (implémentation + clôture) : autorisé — message
+- **Commit 2** (implémentation + clôture) : `8b546de` —
   `feat: migrate mobile map to react native maps` / `Ticket: YUNIMOBILE-0011D`.
-- **Push** : non.
+- **Correction recentrage** : **non commitée** dans cette passe (pas d’amend,
+  pas de push, pas de réponse au thread CodeRabbit).
 - **Installation** : oui — uniquement `react-native-maps@1.20.1` et retrait
   `@rnmapbox/maps` (registre npm).
 

@@ -5,11 +5,12 @@ import {
 } from "@/components/map/map-region";
 import type { MapBbox, MapEventItem } from "@yunicity/types";
 import { MAP_RECENTER, resolveCityMapCenter } from "@yunicity/utils";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, type Region } from "react-native-maps";
 
 const MARKER_COLOR = "#2A2FFF";
+const CITY_ANIMATION_MS = 800;
 
 type EventMapProps = {
   city: string;
@@ -42,7 +43,19 @@ export function EventMap({
   onRecenterPress,
 }: EventMapProps) {
   const mapRef = useRef<MapView>(null);
+  const skipCityAnimationRef = useRef(true);
+  const { latitude: centerLatitude, longitude: centerLongitude, zoom: centerZoom } =
+    useMemo(() => resolveCityMapCenter(city), [city]);
   const initialRegion = useMemo(() => cityToRegion(city), [city]);
+
+  // initialRegion applies only on mount; animate when the resolved city center changes.
+  useEffect(() => {
+    if (skipCityAnimationRef.current) {
+      skipCityAnimationRef.current = false;
+      return;
+    }
+    mapRef.current?.animateToRegion(cityToRegion(city), CITY_ANIMATION_MS);
+  }, [city, centerLatitude, centerLongitude, centerZoom]);
 
   const handleRegionChangeComplete = useCallback(
     (region: Region) => {
@@ -53,7 +66,7 @@ export function EventMap({
 
   const handleRecenter = useCallback(() => {
     const next = cityToRegion(city);
-    mapRef.current?.animateToRegion(next, 800);
+    mapRef.current?.animateToRegion(next, CITY_ANIMATION_MS);
     onRecenterPress();
     onBboxChange(regionToBbox(next));
   }, [city, onBboxChange, onRecenterPress]);
