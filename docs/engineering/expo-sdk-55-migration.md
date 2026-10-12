@@ -83,13 +83,9 @@ registre tiers / `file:` hors workspace.
 | Action 4 | Exécutée **alors que** le protocole imposait un **arrêt** après trois échecs |
 | Conformité | La 4ᵉ action **n’était pas conforme** au protocole |
 | Résultat technique | Installation propre obtenue ; gates techniques ultérieurs **tous réussis** |
-| Présentation | **Ne pas** présenter la suppression/recréation de `node_modules` comme
-  procédure normale à reproduire |
-| 0011E-C / 0011E-D | Si le même ENOENT réapparaît : **arrêter** après la limite et
-  **demander une décision CTO** ; la suppression/recréation de `node_modules`
-  doit être **prévue explicitement dès le ticket**, pas improvisée après les échecs |
-| Effet sur décision | L’écart **n’annule pas** les résultats techniques ; il reste
-  **traçable** ici et dans le ticket |
+| Présentation | **Ne pas** présenter la suppression/recréation de `node_modules` comme procédure normale à reproduire |
+| 0011E-C / 0011E-D | Si le même ENOENT réapparaît : **arrêter** après la limite et **demander une décision CTO** ; la suppression/recréation de `node_modules` doit être **prévue explicitement dès le ticket**, pas improvisée après les échecs |
+| Effet sur décision | L’écart **n’annule pas** les résultats techniques ; il reste **traçable** ici et dans le ticket |
 
 ## 3. Configuration
 
@@ -170,22 +166,15 @@ réinstallation ni de relance expo-doctor pour ce complément.
 
 | Étape | Résultat |
 |---|---|
-| Baseline avant migration | `.expo/` **présent localement** (créé ~01:24 le 2026-10-12, hors Git,
-  ignoré via `.gitignore`) — **absent** de l’arbre Git `f768723` |
-| Inventaire non sensible | 7 entrées : `cache/`, `cache/eslint/`,
-  `cache/eslint/.cache_*`, `devices.json` (20 o, objet JSON), `README.md`,
-  `types/`, `types/router.d.ts` — **aucun contenu personnel reproduit** |
-| Processus | Aucun Expo/Metro sur `apps/mobile/.expo` (node observés : tsserver
-  Cursor, Next.js autre worktree) |
+| Baseline avant migration | `.expo/` **présent localement** (créé ~01:24 le 2026-10-12, hors Git, ignoré via `.gitignore`) — **absent** de l’arbre Git `f768723` |
+| Inventaire non sensible | 7 entrées : `cache/`, `cache/eslint/`, `cache/eslint/.cache_*`, `devices.json` (20 o, objet JSON), `README.md`, `types/`, `types/router.d.ts` — **aucun contenu personnel reproduit** |
+| Processus | Aucun Expo/Metro sur `apps/mobile/.expo` (node observés : tsserver Cursor, Next.js autre worktree) |
 | Déplacement | `apps/mobile/.expo` → `C:\tmp\yunimobile-0011e-b-expo-stash` |
 | Commande | `pnpm --filter mobile run typecheck` |
 | Exit | **0** |
 | Restauration | stash → `apps/mobile/.expo` ; stash absent après |
-| `fc.exe` inventaire | exit **1** — différences **uniquement** sur ticks mtime des
-  **dossiers** après `Move-Item` ; **ne remet pas en cause** le typecheck |
-| Vérif. légère (sans redeplacer) | chemins relatifs : aucun manquant / supplémentaire ;
-  tailles + SHA-256 des 4 fichiers **identiques** à la capture pré-restauration →
-  **restauration conforme** (dates de dossiers ignorées) |
+| `fc.exe` inventaire | exit **1** — différences **uniquement** sur ticks mtime des **dossiers** après `Move-Item` ; **ne remet pas en cause** le typecheck |
+| Vérif. légère (sans redeplacer) | chemins relatifs : aucun manquant / supplémentaire ; tailles + SHA-256 des 4 fichiers **identiques** à la capture pré-restauration → **restauration conforme** (dates de dossiers ignorées) |
 
 ## 5. Évaluation
 

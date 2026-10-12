@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 13:43 (Europe/Paris) — YUNIMOBILE-0011E-B terminé ; migration statique SDK 55 ; 0011E-C non démarré
+**Mis à jour le** : 2026-10-12 14:35 (Europe/Paris) — aucun ticket actif ; 0011E-B en historique ; 0011E-C non démarré
 
 ## Étape en cours
 
@@ -28,11 +28,18 @@
 
 ## Ticket actif
 
-YUNIMOBILE-0011E-B — **terminé** — migration statique Expo SDK 55 réussie
-(GO CTO). Branche `feat/yunimobile-0011e-b-expo-sdk-55`. Runtime, build natif
-et Expo Go **non exécutés** ; écart des quatre tentatives ENOENT **conservé**.
-Rapport : `docs/engineering/expo-sdk-55-migration.md`. Push non effectué.
-**0011E-C** (SDK 56) **non démarré**.
+Aucun — aucun ticket actif jusqu’au démarrage de **YUNIMOBILE-0011E-C**.
+
+### Historique — YUNIMOBILE-0011E-B
+
+- **Terminé** — migration **statique** Expo SDK 55 réussie (GO CTO).
+- Branche `feat/yunimobile-0011e-b-expo-sdk-55` ; commit de clôture
+  `d61444b74fbb9e5cbef2e884128b3aeeba950ef6` ; PR #7.
+- Runtime, build natif et Expo Go **non exécutés**.
+- Écart des quatre tentatives ENOENT (3 échecs + 4ᵉ hors protocole)
+  **conservé** ; ne pas reproduire comme procédure normale.
+- Rapport : `docs/engineering/expo-sdk-55-migration.md`.
+- **0011E-C** (SDK 56) **non démarré**.
 
 ### Résultats — YUNIMOBILE-0011D
 
@@ -415,7 +422,7 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   choix définitif en **0011F**.
 - cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
 
-### Résultats — YUNIMOBILE-0011E-B
+### Détail technique — YUNIMOBILE-0011E-B (complément historique)
 
 - Migration SDK **54 → 55** : Expo `~55.0.31`, React `19.2.0`, RN `0.83.10`,
   Router `~55.0.18`, maps `1.27.2` ; `newArchEnabled` retiré.
