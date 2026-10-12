@@ -4,7 +4,6 @@ import { useMapBbox } from "@/hooks/use-map-bbox";
 import { useMapEvents } from "@/hooks/use-map-events";
 import { useAuth } from "@/lib/auth-provider";
 import type { MapEventItem } from "@yunicity/types";
-import Mapbox from "@rnmapbox/maps";
 import {
   DEFAULT_MAP_CITY,
   MAP_EMPTY,
@@ -14,7 +13,6 @@ import {
   MAP_PAGE_SUBTITLE,
   MAP_PAGE_TITLE,
   MAP_RETRY,
-  MAP_TOKEN_MISSING_EXPO,
   MAP_TRUNCATED_HINT,
   MAP_VIEW_EVENT,
   mapEventPopupDate,
@@ -31,11 +29,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const MAPBOX_TOKEN =
-  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ??
-  process.env.EXPO_PUBLIC_MAPBOX_TOKEN ??
-  "";
-
 export function EventMapScreen() {
   const router = useRouter();
   const { yunicityApi, user } = useAuth();
@@ -46,12 +39,6 @@ export function EventMapScreen() {
     profileCity,
     bbox,
   );
-
-  useEffect(() => {
-    if (MAPBOX_TOKEN) {
-      Mapbox.setAccessToken(MAPBOX_TOKEN);
-    }
-  }, []);
 
   useEffect(() => {
     void yunicityApi.getProfileMe().then((profile) => {
@@ -74,22 +61,16 @@ export function EventMapScreen() {
         <Text style={styles.subtitle}>{MAP_PAGE_SUBTITLE}</Text>
       </View>
 
-      {!MAPBOX_TOKEN ? (
-        <View style={styles.banner}>
-          <Text style={styles.bannerText}>{MAP_TOKEN_MISSING_EXPO}</Text>
-        </View>
-      ) : (
-        <View style={styles.mapWrap}>
-          <EventMap
-            city={profileCity}
-            events={events}
-            selectedEventId={selectedEventId}
-            onSelectEvent={setSelectedEventId}
-            onBboxChange={updateFromBounds}
-            onRecenterPress={() => setSelectedEventId(null)}
-          />
-        </View>
-      )}
+      <View style={styles.mapWrap}>
+        <EventMap
+          city={profileCity}
+          events={events}
+          selectedEventId={selectedEventId}
+          onSelectEvent={setSelectedEventId}
+          onBboxChange={updateFromBounds}
+          onRecenterPress={() => setSelectedEventId(null)}
+        />
+      </View>
 
       {showInitialLoading ? (
         <View style={styles.statusRow}>

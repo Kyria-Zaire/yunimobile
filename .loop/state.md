@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 01:05 (Europe/Paris) — clôture audit YUNIMOBILE-0011D
+**Mis à jour le** : 2026-10-12 02:15 (Europe/Paris) — YUNIMOBILE-0011D terminé (runtime reporté)
 
 ## Étape en cours
 
@@ -22,34 +22,38 @@
 | 0.11A Audit de préparation au premier dev build Android | YUNIMOBILE-0011A | Terminé — audit réalisé ; premier dev build bloqué |
 | 0.11B Préparation du nettoyage disque Android | YUNIMOBILE-0011B | Terminé — espace suffisant, aucune suppression effectuée |
 | 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
-| 0.11D Audit migration Mapbox → Google Maps | YUNIMOBILE-0011D | Terminé — audit réalisé ; CONDITIONAL GO pour l’implémentation |
+| 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — migration statique OK ; runtime reporté après migration Expo SDK |
 
 ## Ticket actif
 
-Aucun. YUNIMOBILE-0011D **audit clôturé** (CTO) : migration cartographique
-auditee ; décision **CONDITIONAL GO** pour l’implémentation. Branche
-`feat/yunimobile-0011d-google-maps` ; ticket
-`.loop/tickets/YUNIMOBILE-0011D.md` ; rapport
-`docs/engineering/google-maps-migration-audit.md`. Commit local documentaire
-autorisé ; aucun push. **Prochaine action** : implémentation contrôlée de 0011D
-(non lancée).
+Aucun — YUNIMOBILE-0011D **terminé**. Branche
+`feat/yunimobile-0011d-google-maps`. Décision : implémentation **statique**
+acceptée ; aucune affirmation runtime ; aucune affirmation Google Maps iOS ou
+Android. Rapport : `docs/engineering/google-maps-migration-audit.md` § I / § K.
 
 ### Résultats — YUNIMOBILE-0011D
 
-- Préconditions : `main` @ `b4ffaf4e597a645b3c5d6c39768251cc33a7ad31` ;
-  branche 0011D ; audit lecture seule.
-- Inventaire Mapbox mobile + référence Web Maps JS (`ee57ce1…` inchangé).
-- Version : doc Expo **SDK 54** → `react-native-maps` **1.20.1** (pas « latest ») ;
-  install future `pnpm expo install react-native-maps` + vérification version
-  résolue — **aucune installation** dans l’audit.
-- Expo Go : inclus ; Android fournisseur Google natif ; iOS carte ≠ preuve Google ;
-  Google iOS Yunicity = clé restreinte + build natif ; `PROVIDER_GOOGLE` Expo Go
-  iOS **non affirmé** sans runtime.
-- Découpage : **0011D impl** (code/deps, sans clé ni build) → **0011E**
-  (Java/AVD) → **0011F** (clés + dev build Android + preuve Google) ; iOS build
-  ultérieur.
-- Décision : **CONDITIONAL GO** (confirmé CTO). Critères d’implémentation listés
-  dans le rapport.
+- Audit (commit `f827895…`) : **CONDITIONAL GO** ; reco `react-native-maps`
+  **1.20.1** (SDK 54, pas doc latest).
+- Implémentation : `react-native-maps@1.20.1` installé ; `@rnmapbox/maps`
+  retiré ; plugin et `EXPO_PUBLIC_MAPBOX_*` retirés ; `EventMap` /
+  `EventMapScreen` migrés ; pas de `PROVIDER_GOOGLE` iOS ; pas de clé Google.
+- Contrôles exit 0 : typecheck ; lint app+components ; `expo install --check` ;
+  expo-doctor 1.20.4 **18/18** ; `expo export` Android hors dépôt (1809 modules).
+- Revue CTO intermédiaire (sans Metro) : diff carte OK (pas de boucle région) ;
+  `regionToBbox` validé vs contrat API/Web ; helpers Mapbox utils **conservés**
+  (morts mobile, vivants Web). Aucun fix applicatif requis.
+- Test iPhone Expo Go (Kyria) : Expo Go **SDK 57.0.0** vs projet **SDK 54** ;
+  connexion LAN / ouverture URL OK ; refus *Project is incompatible…* **avant**
+  chargement du bundle ; aucun JS applicatif, écran, marqueur, fournisseur ou
+  appel API testé ; runtime iOS **non exécuté**. Ce résultat n’est **pas** un
+  échec de la migration cartographique.
+- Google Maps Android/iOS : **toujours non prouvés**.
+- Décision CTO : ne pas upgrader Expo dans 0011D ; pas d’EAS Go / TestFlight ;
+  migration SDK incrémentale en **0011E**.
+- Roadmap suivante (non lancée) : **0011E** (Expo SDK 54→55→56→57, un palier à
+  la fois) → **0011F** (Java/Android + AVD API 35) → **0011G** (premier
+  development build Android) ; validation iOS native = ticket ultérieur.
 
 ### Résultats — YUNIMOBILE-0011C
 
@@ -371,29 +375,31 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Test Cursor de chargement adaptateur (0.3) : **consigné** le 2026-10-11
   (YUNIMOBILE-0011C) — découverte prouvée pour cette session, pas une garantie
   générale de respect des consignes.
-- Cartographie : **Google Maps** fournisseur **définitif** Web + Mobile ;
-  Mapbox **hérité, à retirer** ; aucun token/build/env Mapbox ; FastAPI commun.
-  Compatibilité Expo Go iPhone + Google Maps : **à prouver**, non affirmée.
-- Cible **probable** premier dev build : émulateur Android API 35 ; AVD après
-  0011D (en 0011E) ; iPhone Expo Go pour tests compatibles ; iOS/EAS séparé ;
+- Cartographie mobile : migration **statique** Mapbox → `react-native-maps`
+  **réalisée** (0011D) ; Google Maps Android/iOS runtime **non prouvés** ;
+  Mapbox retiré du chemin carte mobile ; helpers utils Mapbox conservés (Web) ;
+  FastAPI commun.
+- Compatibilité Expo Go iPhone : **bloquée** (Go SDK 57 vs projet SDK 54) ;
+  runtime reporté après migration Expo SDK.
+- Cible **probable** premier dev build : émulateur Android API 35 ; AVD en
+  **0011F** ; development build Android en **0011G** ; iOS native ultérieur ;
   aucun Android physique détecté.
 - JDK : 21.0.6 + JBR 21.0.8 disponibles ; `JAVA_HOME` absent ; JDK 17 non trouvé ;
   installation JDK 17 non obligatoire tant que la chaîne générée ne l’exige pas ;
-  choix définitif en 0011E.
+  choix définitif en **0011F**.
 - cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
 
 ## Prochaine étape proposée
 
-1. **Implémentation contrôlée de YUNIMOBILE-0011D** — remplacer Mapbox par
-   `react-native-maps` (cible SDK 54 **1.20.1** via `pnpm expo install`,
-   vérifier version résolue) **sans** clé Google ni build natif ; critères dans
-   le rapport d’audit. **Non lancée.**
-2. Puis **YUNIMOBILE-0011E** — Java/Android + AVD API 35.
-3. Puis **YUNIMOBILE-0011F** — clés Google sécurisées, premier dev build Android,
-   preuve fournisseur Google.
-4. Build iOS : ticket ultérieur dédié.
+1. **YUNIMOBILE-0011E** — migration contrôlée Expo SDK **54 → 55 → 56 → 57**,
+   **un SDK à la fois**, avec contrôles à chaque palier. Ne pas sauter de
+   version ; ne pas démarrer ici.
+2. Puis **YUNIMOBILE-0011F** — environnement Java/Android et AVD API 35.
+3. Puis **YUNIMOBILE-0011G** — premier development build Android.
+4. Validation iOS native : ticket ultérieur dédié (pas Expo Go tant que le
+   projet n’est pas aligné SDK 57).
 
-0011E et 0011F non lancés.
+0011E, 0011F et 0011G non lancés.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 

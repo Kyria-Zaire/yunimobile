@@ -276,12 +276,176 @@ Installation prévue (implémentation, pas cette passe) :
 - Dépôt Web non modifié.
 - Auto-vérification documentaire ; revue CTO des clarifications appliquée.
 
-## H. Recommandation synthétique
+## H. Recommandation synthétique (audit)
 
 | Sujet | Recommandation |
 |---|---|
 | Bibliothèque | `react-native-maps` (cible **1.20.1** via `pnpm expo install`, SDK 54) |
 | Expo Go | Inclus ; Android≈Google ; iOS≠preuve Google |
-| Prochaine action | **Implémentation contrôlée 0011D** (sans clé ni build) |
 | Puis | 0011E → 0011F ; iOS build plus tard |
-| Décision | **CONDITIONAL GO** (confirmé CTO) |
+| Décision audit | **CONDITIONAL GO** (confirmé CTO) |
+
+## I. Implémentation contrôlée (2026-10-12)
+
+Base documentaire : `f827895ceefb8d513c1736a32fcaaae56dce3f9a`. Branche
+`feat/yunimobile-0011d-google-maps`. **Sans** clé Google, **sans** build natif,
+**sans** `PROVIDER_GOOGLE` iOS, **sans** commit/push dans cette passe.
+
+### Modifications réalisées
+
+| Zone | Changement |
+|---|---|
+| Dépendances | `+ react-native-maps@1.20.1` ; `- @rnmapbox/maps` ; lockfile via pnpm |
+| `app.json` | Plugin `@rnmapbox/maps` retiré ; pas de clé Google ; pas de plugin maps |
+| `.env.example` | Variables `EXPO_PUBLIC_MAPBOX_*` retirées |
+| `event-map.tsx` | `MapView` + `Marker` (react-native-maps) ; région Reims ; bbox |
+| `event-map-screen.tsx` | Token Mapbox / banner token retirés ; carte toujours montée |
+| `map-region.ts` | Fonctions pures `regionToBbox` / `zoomToLatitudeDelta` |
+
+Précontrôle paquets : `bundledNativeModules` Expo 54.0.37 et SDK-54 upstream →
+`react-native-maps: 1.20.1`. Scripts npm du paquet (lint/test/build/`prepare`
+husky, etc.) : scripts de **développement** du package ; installation registry
+officielle npm. Aucune dépendance inattendue.
+
+Lifecycle réellement déclenchés côté workspace : `pnpm add` / `pnpm remove` via
+`expo install` et `pnpm remove` (pas de script applicatif Yunicity ajouté).
+
+### Contrôles propres (exit 0)
+
+| Contrôle | Résultat |
+|---|---|
+| Typecheck `pnpm --filter mobile run typecheck` | 0 |
+| Lint `expo lint app components` | 0 (legacy ESLint config notice) |
+| `expo install --check` | 0 — Dependencies are up to date |
+| `expo-doctor@1.20.4` (intégrité npm + cache `C:\tmp\yunimobile-0011d-doctor-cache`) | 0 — **18/18** |
+| `expo export --platform android` → `C:\tmp\yunimobile-0011d-dist-android` | 0 — 1809 modules ; 27 fichiers, ~6,19 Mo hors dépôt |
+
+Dépôt : pas de `android/`, `ios/`, `dist/` ; `.expo/` local éventuel **ignoré**
+(non suivi). Aucune référence active `@rnmapbox` / `EXPO_PUBLIC_MAPBOX` /
+`Mapbox` / `MAPBOX` sous `apps/mobile` ; lockfile sans `@rnmapbox`.
+
+### Comportements non exécutés
+
+- Aucun lancement Metro / Expo Go / ADB / émulateur.
+- Aucun test runtime iPhone ou Android.
+- Aucune preuve que le fournisseur affiché est Google (ni iOS ni Android
+  runtime).
+- Helpers Mapbox restants dans `packages/utils` (directions, geocoding, static
+  preview) : **hors** UI mobile carte ; nettoyage follow-up possible.
+- Dépôt Web non modifié.
+
+### Preuves Google Maps
+
+| Plateforme | Statut |
+|---|---|
+| Android (fournisseur natif attendu dans Expo Go) | **Non obtenue** (pas de runtime) |
+| iOS Google avec clés Yunicity | **Non obtenue** — nécessite clé + build natif (ticket iOS ultérieur) |
+| Test iPhone Expo Go | **Tenté** — refus compatibilité SDK avant bundle (voir § K) |
+
+### Décision d’implémentation (cette passe)
+
+Migration **statique** réalisée et **acceptée** (clôture CTO). Runtime iOS
+**non exécuté** — blocage Expo Go SDK 57 vs projet SDK 54 (§ K) ; ce n’est
+**pas** un échec cartographique. Aucune affirmation Google Maps iOS/Android.
+
+## J. Revue CTO intermédiaire (2026-10-12) — avant test iPhone
+
+Contrôles statiques déjà approuvés. Runtime **non** autorisé (pas de Metro /
+Expo Go). Deux vérifications ciblées : diff cartographique + `regionToBbox` ;
+inventaire helpers Mapbox `packages/utils`.
+
+### J.1 Conclusion revue A (diff cartographique)
+
+| Point | Verdict |
+|---|---|
+| MapView contrôlé / boucle région→fetch→render→région | **OK** — `initialRegion` seulement (non contrôlé) ; pas de prop `region` |
+| `onRegionChangeComplete` vs simple rerender | **OK** — callback uniquement sur fin de mouvement caméra ; debounce 300 ms + `hasBboxChangedSignificantly` limitent les fetch |
+| Recentrage sans recreer le composant | **OK** — `mapRef.animateToRegion` ; pas de `key` forçant un remount |
+| Clés marqueurs stables | **OK** — `key={event.id}` et `identifier={event.id}` |
+| Ouverture fiche | **OK** — `onPress` → `onSelectEvent(event.id)` ; callout via `selectedEventId` |
+| Accessibilité marqueurs | **OK** — `accessibilityLabel={event.title}` sur `Marker` (+ cible `onPress`) |
+| Provider Google forcé iOS | **OK** — aucun `provider` / `PROVIDER_GOOGLE` |
+| Token / secret introduit | **OK** — aucun ; `.env.example` sans Mapbox/Google |
+
+Risque résiduel (non bloquant, runtime) : marqueurs custom (`Marker` + `View`
+enfant) — hit-testing à confirmer sur appareil ; pas de preuve ici.
+
+### J.2 Preuves B (`regionToBbox`)
+
+Contrat API (`MapBbox` / `buildMapEventsQuery`) :
+
+- query : `lat_min`, `lon_min`, `lat_max`, `lon_max`, `city`, `limit` ;
+- sémantique : **south / west / north / east** (`lat_min`=`south`,
+  `lon_min`=`west`, etc.) — aligné Web `boundsToMapBbox`
+  (`getSouth`→`lat_min`, `getWest`→`lon_min`, …).
+
+Implémentation mobile : centre ± demi-deltas → même contrat.
+
+Contrôle déterministe (Node temporaire, exit 0, sans nouveau framework) :
+
+| Cas | Résultat |
+|---|---|
+| Reims 49.2583/4.0317, zoom 12 → latDelta=`360/2^12` | PASS |
+| Deltas connus 0.2 / 0.4 autour 49.25/4.03 | PASS → south 49.15 north 49.35 west 3.83 east 4.23 |
+| Ordre west/south/east/north | PASS |
+| Dateline (lon 179, lonDelta 4) | PASS arithmétique ; **pas** de wrap `[-180,180]` (helper ne le prétend pas) |
+
+Web (lecture seule, inchangé) : `use-map-bbox` + `boundsToMapBbox` ; même
+mapping N/S/E/W → `MapBbox`.
+
+### J.3 Inventaire helpers Mapbox (`packages/utils`)
+
+| Fichier | Exports clés | Imports dans Yunimobile (hors définition/barrel) | Bundle Android export 0011D | Web (yunicity, lecture seule) | Classe |
+|---|---|---|---|---|---|
+| `mapbox-directions.ts` | `fetchMapboxRoute`, `fetchMapboxWalkingRoute` | **aucun** consommateur app | absents du dist | utilisés (itinéraires) | mort **mobile** ; vivant **Web** |
+| `mapbox-geocoding.ts` | `geocodeMapboxAddress` | aucun | absents | utilisés | mort mobile ; vivant Web |
+| `event-detail.ts` | `buildMapboxStaticPreviewUrl` | aucun | absents | previews fiches | mort mobile ; vivant Web |
+| `neighborhood-detail-portal.ts` | `buildNeighborhoodDetailMapPreviewUrl` | aucun | absents | previews quartier | mort mobile ; vivant Web |
+| `neighborhoods-desktop-presenter.ts` | `buildNeighborhoodsDesktopMapPreviewUrl` | aucun | absents | bandeau desktop | mort mobile ; vivant Web |
+| `map-labels.ts` | `MAP_TOKEN_MISSING_EXPO` (etc.) | plus importé par mobile carte | n/a | labels partagés | copy morte mobile ; labels génériques utiles |
+
+**Recommandation** : **ne pas supprimer dans 0011D**. Ce sont des reliquats
+morts pour l’app mobile Yunimobile, mais encore consommés par le dépôt Web
+(copie sœur). Nettoyage / renommage = ticket **coordonné** Web+Mobile après
+migration Web Static Mapbox → Google, pas une purge locale 0011D.
+
+### J.4 Lifecycle (clarification D)
+
+| Type | Détail |
+|---|---|
+| Commandes workspace | `pnpm exec expo install react-native-maps@1.20.1` → `pnpm add react-native-maps@1.20.1` ; puis `pnpm remove @rnmapbox/maps` |
+| Scripts lifecycle **paquets** réellement exécutés | Aucun `postinstall`/`prepare` applicatif Yunicity ajouté ; le `prepare: husky` listé dans le *package.json source* de `react-native-maps` est un script de **dev upstream**, pas une preuve d’exécution à l’install registry |
+| Distinction | Commandes **pnpm/expo** (workspace) ≠ scripts lifecycle **du paquet** npm |
+
+Aucun fichier applicatif modifié pendant cette revue ; cinq contrôles lourds
+**non** relancés. `git diff --check` exit 0.
+
+## K. Test iPhone Expo Go + clôture 0011D (2026-10-12)
+
+Preuve fournie par Kyria ; aucune donnée personnelle ou réseau inutile
+reproduite ici.
+
+| Point | Observation |
+|---|---|
+| Appareil | iPhone physique |
+| Expo Go | SDK **57.0.0** |
+| Projet Yunimobile | SDK **54** |
+| Connexion LAN / ouverture de l’URL | **réussies** |
+| Message | *Project is incompatible with this version of Expo Go* |
+| Bundle / JS applicatif | **non chargé / non exécuté** |
+| Écran, marqueurs, fournisseur cartographique, appels API | **non testés** |
+| Runtime iOS | **non exécuté** |
+| Contrôles migration statique | **réussis** (inchangés) |
+| Google Maps Android / iOS | **toujours non prouvés** |
+
+### Décision CTO
+
+- Ce résultat **n’est pas** un échec de la migration cartographique.
+- Ne **pas** mettre à niveau Expo dans 0011D.
+- Ne **pas** utiliser EAS Go / TestFlight pour contourner.
+- Statut 0011D : **terminé** — migration statique Mapbox → react-native-maps
+  réalisée ; runtime reporté après migration Expo SDK.
+- Ticket suivant : **0011E** — migration incrémentale Expo SDK
+  **54 → 55 → 56 → 57**, un palier à la fois, avec contrôles à chaque étape ;
+  puis **0011F** (Java/Android + AVD API 35) ; **0011G** (premier development
+  build Android) ; validation iOS native = ticket ultérieur.
