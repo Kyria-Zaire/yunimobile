@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 23:56 (Europe/Paris) — YUNIMOBILE-0011E-E terminé ; Option E retenue ; 0011F-A non commencé
+**Mis à jour le** : 2026-10-13 00:33 (Europe/Paris) — YUNIMOBILE-0011F-A terminé ; préparation Android bloquée
 
 ## Étape en cours
 
@@ -28,10 +28,25 @@
 | 0.11E-C Migration Expo SDK 55 → 56 | YUNIMOBILE-0011E-C | Terminé — migration statique Expo SDK 56 ; PR #8 fusionnée `a8fc4f5…` ; runtime/native non validés |
 | 0.11E-D Migration Expo SDK 56 → 57 | YUNIMOBILE-0011E-D | Terminé — migration statique Expo SDK 57 réussie ; runtime iPhone non exécuté (Expo Go 58 incompatible) |
 | 0.11E-E Audit SDK 58 et stratégie runtime | YUNIMOBILE-0011E-E | Terminé — audit SDK 58 et stratégie runtime réalisés ; Option E |
+| 0.11F-A Environnement Android et AVD API 35 | YUNIMOBILE-0011F-A | Terminé — diagnostic OK ; préparation bloquée (JDK 17 + RAM) |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011F-A
+
+- **Terminé** — diagnostic réalisé ; préparation Android **bloquée** par
+  absence de **JDK 17** et RAM libre **insuffisante** (≈ 0,7–0,8 Gio).
+- CTO : ne pas contourner avec Java **21** / **23** (présents, non retenus).
+- Image **API 35** Play **x86_64** installée ; **adb** et **emulator**
+  présents ; cmdline-tools / **avdmanager** absents ; **aucun AVD**.
+- Aucun runtime Android ; aucun processus arrêté ; variables de session
+  non posées.
+- Rapport : `docs/engineering/android-avd-readiness.md`.
+- Prochain ticket proposé : **YUNIMOBILE-0011F-JDK17** (**non lancé**) ;
+  reprise AVD après install JDK 17 **et** RAM suffisante. **0011F-B** non
+  commencé.
 
 ### Historique — YUNIMOBILE-0011E-E
 
@@ -480,10 +495,11 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 - Cible prochain travail : **YUNIMOBILE-0011F-A** (AVD API 35) puis
   **0011F-B** (premier runtime Android) ; iOS native ultérieur seulement
   après autorisation séparée ; aucun Android physique détecté.
-- JDK : 21.0.6 + JBR 21.0.8 disponibles ; `JAVA_HOME` absent ; JDK 17 non trouvé ;
-  installation JDK 17 non obligatoire tant que la chaîne générée ne l’exige pas ;
-  choix définitif en **0011F-A**.
-- cmdline-tools (`sdkmanager` / `avdmanager`) : absents du SDK inspecté.
+- JDK : **17 absent** ; Java 21 / 23 présents **non retenus** (CTO) ;
+  `JAVA_HOME` process UNSET ; install proposée en **0011F-JDK17** (non lancé).
+- Android : adb + emulator présents ; cmdline-tools / avdmanager **absents** ;
+  **aucun AVD** ; image API 35 Play x86_64 **installée** ; RAM libre
+  observée **0,7–0,8 Gio** (émulateur non prêt).
 
 ### Détail technique — YUNIMOBILE-0011E-B (complément historique)
 
@@ -512,12 +528,12 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011F-A** — environnement Android et AVD API 35
-   (**non commencé** ; fichier ticket non créé).
-2. **YUNIMOBILE-0011F-B** — premier runtime Android SDK 57 (réservé ;
+1. **YUNIMOBILE-0011F-JDK17** — installation JDK 17 (**non lancé** ;
+   fichier ticket non créé).
+2. Reprise AVD / session Android après JDK 17 **et** RAM libre suffisante.
+3. **YUNIMOBILE-0011F-B** — premier runtime Android SDK 57 (réservé ;
    non commencé).
-3. SDK 58 et EAS iOS : **non commencés** ; Apple Developer non autorisé ;
-   migration 58 uniquement après stable + audit dédié.
+4. SDK 58 et EAS iOS : **non commencés**.
 
 Runtime iPhone non exécuté (Go 58 ≠ projet 57 ; provenance Go non vérifiée).
 
