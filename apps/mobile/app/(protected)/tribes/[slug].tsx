@@ -30,7 +30,7 @@ import {
   tribeVisibilityLabel,
 } from "@yunicity/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -127,84 +127,238 @@ function TribeWallComposer({
   );
 }
 
+type TribeResource = {
+  key: string;
+  tribe: Tribe | null;
+  posts: FeedPost[];
+  members: TribeMember[];
+  error: string | null;
+};
+
 export default function TribeDetailScreen() {
   const router = useRouter();
   const { slug, city: cityParam } = useLocalSearchParams<{ slug: string; city?: string }>();
   const { yunicityApi: api, user } = useAuth();
   const city = cityParam ?? user?.city ?? "Reims";
-  const [tribe, setTribe] = useState<Tribe | null>(null);
-  const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [members, setMembers] = useState<TribeMember[]>([]);
-  const [loading, setLoading] = useState(true);
+  const requestedKey = slug ? `${slug}::${city}` : "";
+  const [resource, setResource] = useState<TribeResource | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [wallLoading, setWallLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
-  const loadTribe = useCallback(async () => {
-    if (!slug) return;
-    setError(null);
-    try {
-      const data = await api.tribes.getTribe(slug, city);
-      setTribe(data);
-      return data;
-    } catch {
-      setError(TRIBE_NOT_FOUND);
-      return null;
-    }
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const refreshGenRef = useRef(0);
+  const wallGenRef = useRef(0);
+
+  const fetchTribe = useCallback(async () => {
+    if (!slug) return null;
+    return api.tribes.getTribe(slug, city);
   }, [api.tribes, slug, city]);
 
-  const loadWall = useCallback(
+  const fetchWall = useCallback(
     async (tribeData: Tribe) => {
       if (!slug || !tribeData.viewer_is_member || tribeData.is_archived) {
-        setPosts([]);
-        return;
+        return [] as FeedPost[];
       }
-      setWallLoading(true);
       try {
         const wall = await api.tribes.listTribePosts(slug, city, { limit: 30 });
-        setPosts(wall.items);
+        return wall.items;
       } catch {
-        setPosts([]);
-      } finally {
-        setWallLoading(false);
+        return [] as FeedPost[];
       }
     },
     [api.tribes, slug, city],
   );
 
-  const loadMembers = useCallback(
+  const fetchMembers = useCallback(
     async (tribeData: Tribe) => {
       if (!slug || !tribeData.viewer_is_member || tribeData.is_archived) {
-        setMembers([]);
-        return;
+        return [] as TribeMember[];
       }
       try {
         const data = await api.tribes.listTribeMembers(slug, city, { page_size: 50 });
-        setMembers(data.items);
+        return data.items;
       } catch {
-        setMembers([]);
+        return [] as TribeMember[];
       }
     },
     [api.tribes, slug, city],
   );
 
-  const loadAll = useCallback(async () => {
-    const data = await loadTribe();
-    if (data) {
-      await Promise.all([loadWall(data), loadMembers(data)]);
-    }
-    setLoading(false);
-  }, [loadTribe, loadWall, loadMembers]);
+  type LoadMode = "initial" | "refresh" | "retry" | "action";
+
+  const loadBundle = useCallback(
+    async (mode: LoadMode, key: string) => {
+      const dataGen = ++dataGenRef.current;
+      const wallGen = ++wallGenRef.current;
+      try {
+        const data = await fetchTribe();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        if (!data) {
+          if (mode === "refresh") {
+            setResource((prev) =>
+              prev?.key === key ? { ...prev, error: TRIBE_NOT_FOUND } : prev,
+            );
+          } else {
+            setResource({
+              key,
+              tribe: null,
+              posts: [],
+              members: [],
+              error: TRIBE_NOT_FOUND,
+            });
+          }
+          return;
+        }
+        setResource((prev) => ({
+          key,
+          tribe: data,
+          posts: prev?.key === key ? prev.posts : [],
+          members: prev?.key === key ? prev.members : [],
+          error: null,
+        }));
+        const needsWall = data.viewer_is_member && !data.is_archived;
+        if (needsWall && mountedRef.current && wallGen === wallGenRef.current) {
+          setWallLoading(true);
+        }
+        try {
+          const [wallItems, memberItems] = await Promise.all([
+            fetchWall(data),
+            fetchMembers(data),
+          ]);
+          if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+          if (wallGen !== wallGenRef.current) return;
+          setResource((prev) =>
+            prev?.key === key
+              ? { ...prev, tribe: data, posts: wallItems, members: memberItems, error: null }
+              : {
+                  key,
+                  tribe: data,
+                  posts: wallItems,
+                  members: memberItems,
+                  error: null,
+                },
+          );
+        } finally {
+          if (mountedRef.current && wallGen === wallGenRef.current) {
+            setWallLoading(false);
+          }
+        }
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        if (mode === "refresh") {
+          setResource((prev) =>
+            prev?.key === key ? { ...prev, error: TRIBE_NOT_FOUND } : prev,
+          );
+        } else {
+          setResource({
+            key,
+            tribe: null,
+            posts: [],
+            members: [],
+            error: TRIBE_NOT_FOUND,
+          });
+        }
+      }
+    },
+    [fetchTribe, fetchWall, fetchMembers],
+  );
 
   useEffect(() => {
-    void loadAll();
-  }, [loadAll]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+      refreshGenRef.current += 1;
+      wallGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!slug || !requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const wallGen = ++wallGenRef.current;
+    const key = requestedKey;
+    void (async () => {
+      try {
+        const data = await fetchTribe();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        if (!data) {
+          setResource({
+            key,
+            tribe: null,
+            posts: [],
+            members: [],
+            error: TRIBE_NOT_FOUND,
+          });
+          return;
+        }
+        setResource((prev) => ({
+          key,
+          tribe: data,
+          posts: prev?.key === key ? prev.posts : [],
+          members: prev?.key === key ? prev.members : [],
+          error: null,
+        }));
+        const needsWall = data.viewer_is_member && !data.is_archived;
+        if (needsWall && mountedRef.current && wallGen === wallGenRef.current) {
+          setWallLoading(true);
+        }
+        try {
+          const [wallItems, memberItems] = await Promise.all([
+            fetchWall(data),
+            fetchMembers(data),
+          ]);
+          if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+          if (wallGen !== wallGenRef.current) return;
+          setResource({
+            key,
+            tribe: data,
+            posts: wallItems,
+            members: memberItems,
+            error: null,
+          });
+        } finally {
+          if (mountedRef.current && wallGen === wallGenRef.current) {
+            setWallLoading(false);
+          }
+        }
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key,
+          tribe: null,
+          posts: [],
+          members: [],
+          error: TRIBE_NOT_FOUND,
+        });
+      }
+    })();
+  }, [fetchTribe, fetchWall, fetchMembers, slug, requestedKey]);
 
   async function onRefresh() {
+    if (!requestedKey) return;
+    const refreshGen = ++refreshGenRef.current;
     setRefreshing(true);
-    await loadAll();
-    setRefreshing(false);
+    try {
+      await loadBundle("refresh", requestedKey);
+    } finally {
+      if (mountedRef.current && refreshGen === refreshGenRef.current) {
+        setRefreshing(false);
+      }
+    }
+  }
+
+  async function onRetry() {
+    if (!requestedKey) return;
+    setResource(null);
+    await loadBundle("retry", requestedKey);
+  }
+
+  function reloadAfterAction() {
+    if (!requestedKey) return Promise.resolve();
+    return loadBundle("action", requestedKey);
   }
 
   function handleJoin() {
@@ -217,9 +371,11 @@ export default function TribeDetailScreen() {
           setActionBusy(true);
           void api.tribes
             .joinTribe(slug, city, { charter_accepted: true })
-            .then(() => loadAll())
+            .then(() => reloadAfterAction())
             .catch(() => Alert.alert("Impossible de rejoindre pour le moment."))
-            .finally(() => setActionBusy(false));
+            .finally(() => {
+              if (mountedRef.current) setActionBusy(false);
+            });
         },
       },
     ]);
@@ -236,21 +392,29 @@ export default function TribeDetailScreen() {
           setActionBusy(true);
           void api.tribes
             .leaveTribe(slug, city)
-            .then(() => loadAll())
-            .finally(() => setActionBusy(false));
+            .then(() => reloadAfterAction())
+            .finally(() => {
+              if (mountedRef.current) setActionBusy(false);
+            });
         },
       },
     ]);
   }
 
   async function publishPost(body: string) {
-    if (!slug) return;
+    if (!slug || !requestedKey) return;
     const created = await api.tribes.createTribePost(slug, city, { body });
-    setPosts((prev) => [created, ...prev]);
+    if (!mountedRef.current) return;
+    setResource((prev) =>
+      prev?.key === requestedKey
+        ? { ...prev, posts: [created, ...prev.posts] }
+        : prev,
+    );
   }
 
   function confirmDeletePost(post: FeedPost) {
-    if (!slug || !tribe) return;
+    const tribe = resource?.key === requestedKey ? resource.tribe : null;
+    if (!slug || !tribe || !requestedKey) return;
     const isAuthor = post.author.id === user?.id;
     if (!isAuthor && !canModerateTribe(tribe.viewer_role)) return;
     Alert.alert("Publication", undefined, [
@@ -260,7 +424,12 @@ export default function TribeDetailScreen() {
         style: "destructive",
         onPress: () => {
           void api.tribes.deleteTribePost(slug, city, post.id).then(() => {
-            setPosts((prev) => prev.filter((item) => item.id !== post.id));
+            if (!mountedRef.current) return;
+            setResource((prev) =>
+              prev?.key === requestedKey
+                ? { ...prev, posts: prev.posts.filter((item) => item.id !== post.id) }
+                : prev,
+            );
           });
         },
       },
@@ -268,6 +437,7 @@ export default function TribeDetailScreen() {
   }
 
   function confirmMemberAction(member: TribeMember) {
+    const tribe = resource?.key === requestedKey ? resource.tribe : null;
     if (!slug || !tribe || !canModerateTribe(tribe.viewer_role)) return;
     if (member.role === "owner" || member.user_id === user?.id) return;
     const buttons: {
@@ -281,7 +451,7 @@ export default function TribeDetailScreen() {
         onPress: () => {
           void api.tribes
             .updateTribeMemberRole(slug, city, member.user_id, { role: "moderator" })
-            .then(() => loadAll());
+            .then(() => reloadAfterAction());
         },
       });
     }
@@ -291,7 +461,7 @@ export default function TribeDetailScreen() {
         onPress: () => {
           void api.tribes
             .updateTribeMemberRole(slug, city, member.user_id, { role: "member" })
-            .then(() => loadAll());
+            .then(() => reloadAfterAction());
         },
       });
     }
@@ -299,12 +469,20 @@ export default function TribeDetailScreen() {
       text: TRIBE_MOD_EXCLUDE_MEMBER,
       style: "destructive",
       onPress: () => {
-        void api.tribes.removeTribeMember(slug, city, member.user_id).then(() => loadAll());
+        void api.tribes
+          .removeTribeMember(slug, city, member.user_id)
+          .then(() => reloadAfterAction());
       },
     });
     buttons.push({ text: "Annuler", style: "cancel" });
     Alert.alert("Membre", undefined, buttons);
   }
+
+  const loading = Boolean(requestedKey) && resource?.key !== requestedKey;
+  const error = resource?.key === requestedKey ? resource.error : null;
+  const tribe = resource?.key === requestedKey ? resource.tribe : null;
+  const posts = resource?.key === requestedKey ? resource.posts : [];
+  const members = resource?.key === requestedKey ? resource.members : [];
 
   if (loading) {
     return (
@@ -318,7 +496,7 @@ export default function TribeDetailScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.error}>{error ?? TRIBE_NOT_FOUND}</Text>
-        <Pressable style={styles.primaryBtn} onPress={() => void loadAll()}>
+        <Pressable style={styles.primaryBtn} onPress={() => void onRetry()}>
           <Text style={styles.primaryBtnText}>{TRIBES_RETRY}</Text>
         </Pressable>
       </View>

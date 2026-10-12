@@ -9,31 +9,49 @@ import {
   TRIBE_INVITATIONS_SECTION_TITLE,
 } from "@yunicity/utils";
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+
+type InvitationsResource = {
+  key: string;
+  items: TribeInvitationPending[];
+};
 
 export function TribeInvitationsSectionMobile() {
   const { yunicityApi: api } = useAuth();
   const router = useRouter();
-  const [items, setItems] = useState<TribeInvitationPending[]>([]);
-  const [loading, setLoading] = useState(true);
+  const invitationsKey = "mine";
+  const [resource, setResource] = useState<InvitationsResource | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.tribes.listMyTribeInvitations();
-      setItems(data.items);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchInvitations = useCallback(async () => {
+    return api.tribes.listMyTribeInvitations();
   }, [api.tribes]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    void (async () => {
+      try {
+        const data = await fetchInvitations();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key: invitationsKey, items: data.items });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key: invitationsKey, items: [] });
+      }
+    })();
+  }, [fetchInvitations]);
 
   async function accept(invitation: TribeInvitationPending) {
     setBusyId(invitation.id);
@@ -41,23 +59,47 @@ export function TribeInvitationsSectionMobile() {
       const member = await api.tribes.acceptTribeInvitationById(invitation.id, {
         charter_accepted: true,
       });
+      if (!mountedRef.current) return;
       const slug = member.tribe_slug ?? invitation.tribe_slug;
       const city = member.tribe_city ?? invitation.tribe_city;
       router.push(`/(protected)/tribes/${slug}?city=${encodeURIComponent(city)}` as Href);
     } finally {
-      setBusyId(null);
+      if (mountedRef.current) {
+        setBusyId(null);
+      }
     }
   }
 
   async function decline(invitation: TribeInvitationPending) {
     setBusyId(invitation.id);
+    const dataGen = ++dataGenRef.current;
     try {
-      await api.tribes.declineTribeInvitation(invitation.id);
-      await load();
+      try {
+        await api.tribes.declineTribeInvitation(invitation.id);
+      } catch {
+        // Decline failed: keep the current list; no dedicated error UI exists.
+        return;
+      }
+      const data = await fetchInvitations();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key: invitationsKey, items: data.items });
+    } catch {
+      // Decline succeeded but refetch failed: drop only the confirmed invitation.
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === invitationsKey
+          ? { ...prev, items: prev.items.filter((i) => i.id !== invitation.id) }
+          : prev,
+      );
     } finally {
-      setBusyId(null);
+      if (mountedRef.current) {
+        setBusyId(null);
+      }
     }
   }
+
+  const loading = resource?.key !== invitationsKey;
+  const items = resource?.key === invitationsKey ? resource.items : [];
 
   if (loading) {
     return (
@@ -89,7 +131,7 @@ export function TribeInvitationsSectionMobile() {
               <Text style={styles.acceptText}>{TRIBE_INVITATIONS_ACCEPT}</Text>
             </Pressable>
             <Pressable
-              style={styles.declineBtn}
+              style={[styles.declineBtn, busyId === invitation.id && styles.disabled]}
               disabled={busyId === invitation.id}
               onPress={() => void decline(invitation)}
             >

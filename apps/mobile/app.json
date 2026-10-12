@@ -36,7 +36,10 @@
         {
           "color": "#2A2FFF"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-splash-screen",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

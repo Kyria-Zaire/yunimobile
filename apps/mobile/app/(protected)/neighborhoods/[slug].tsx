@@ -13,7 +13,7 @@ import {
   neighborhoodAmbianceLine,
 } from "@yunicity/utils";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -23,31 +23,72 @@ import {
   View,
 } from "react-native";
 
+type NeighborhoodResource = {
+  key: string;
+  data: NeighborhoodContextResponse | null;
+  error: string | null;
+};
+
 export default function NeighborhoodDetailScreen() {
   const router = useRouter();
   const { slug, city: cityParam } = useLocalSearchParams<{ slug: string; city?: string }>();
   const { yunicityApi: api, user } = useAuth();
   const city = cityParam ?? user?.city ?? "Reims";
-  const [data, setData] = useState<NeighborhoodContextResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const requestedKey = slug ? `${slug}::${city}` : "";
+  const [resource, setResource] = useState<NeighborhoodResource | null>(null);
 
-  const load = useCallback(async () => {
-    if (!slug) return;
-    setError(null);
-    try {
-      const ctx = await api.neighborhoods.getNeighborhoodContext(slug, city);
-      setData(ctx);
-    } catch {
-      setError(NEIGHBORHOOD_NOT_FOUND);
-    } finally {
-      setLoading(false);
-    }
-  }, [api.neighborhoods, slug, city]);
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchContext = useCallback(
+    async (slugValue: string, cityValue: string) => {
+      return api.neighborhoods.getNeighborhoodContext(slugValue, cityValue);
+    },
+    [api.neighborhoods],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!slug || !requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const key = requestedKey;
+    void (async () => {
+      try {
+        const ctx = await fetchContext(slug, city);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, data: ctx, error: null });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, data: null, error: NEIGHBORHOOD_NOT_FOUND });
+      }
+    })();
+  }, [fetchContext, slug, city, requestedKey]);
+
+  async function onRetry() {
+    if (!slug || !requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const key = requestedKey;
+    setResource(null);
+    try {
+      const ctx = await fetchContext(slug, city);
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, data: ctx, error: null });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, data: null, error: NEIGHBORHOOD_NOT_FOUND });
+    }
+  }
+
+  const loading = Boolean(requestedKey) && resource?.key !== requestedKey;
+  const error = resource?.key === requestedKey ? resource.error : null;
+  const data = resource?.key === requestedKey ? resource.data : null;
 
   if (loading) {
     return (
@@ -61,7 +102,7 @@ export default function NeighborhoodDetailScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.error}>{error ?? NEIGHBORHOOD_NOT_FOUND}</Text>
-        <Pressable style={styles.retryBtn} onPress={() => void load()}>
+        <Pressable style={styles.retryBtn} onPress={() => void onRetry()}>
           <Text style={styles.retryText}>{NEIGHBORHOODS_RETRY}</Text>
         </Pressable>
       </View>

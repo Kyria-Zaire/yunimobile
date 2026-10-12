@@ -14,7 +14,7 @@ import {
   listOfferManageableOrganizations,
 } from "@yunicity/utils";
 import { Link, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -38,34 +38,68 @@ function StatusPill({ status }: { status: PartnerOfferStatus }) {
 export default function PartnerOffersHubScreen() {
   const router = useRouter();
   const { yunicityApi } = useAuth();
-  const [orgs, setOrgs] = useState<OrganizationMeItem[]>([]);
-  const [items, setItems] = useState<PartnerOfferManagement[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  type HubResource = {
+    key: string;
+    orgs: OrganizationMeItem[];
+    items: PartnerOfferManagement[];
+    error: string | null;
+  };
 
+  const hubKey = "hub";
+  const [resource, setResource] = useState<HubResource | null>(null);
+
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const items = resource?.key === hubKey ? resource.items : [];
+  const error = resource?.key === hubKey ? resource.error : null;
+  const isLoading = resource?.key !== hubKey;
+
+  const orgs = useMemo(
+    () => (resource?.key === hubKey ? resource.orgs : []),
+    [resource],
+  );
   const manageable = useMemo(() => listOfferManageableOrganizations(orgs), [orgs]);
   const orgNames = useMemo(() => new Map(orgs.map((o) => [o.id, o.name])), [orgs]);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const [orgData, offerData] = await Promise.all([
-        yunicityApi.listMyOrganizations(),
-        yunicityApi.partnerOffers.listOffers({ page_size: 100 }),
-      ]);
-      setOrgs(orgData.items);
-      setItems(offerData.items);
-    } catch (err) {
-      setError(isAuthError(err) ? err.message : "Impossible de charger tes offres.");
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchOffersHub = useCallback(async () => {
+    return Promise.all([
+      yunicityApi.listMyOrganizations(),
+      yunicityApi.partnerOffers.listOffers({ page_size: 100 }),
+    ]);
   }, [yunicityApi]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    void (async () => {
+      try {
+        const [orgData, offerData] = await fetchOffersHub();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: hubKey,
+          orgs: orgData.items,
+          items: offerData.items,
+          error: null,
+        });
+      } catch (err) {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: hubKey,
+          orgs: [],
+          items: [],
+          error: isAuthError(err) ? err.message : "Impossible de charger tes offres.",
+        });
+      }
+    })();
+  }, [fetchOffersHub]);
 
   if (isLoading) {
     return (

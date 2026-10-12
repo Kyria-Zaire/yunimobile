@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-12 14:35 (Europe/Paris) — aucun ticket actif ; 0011E-B en historique ; 0011E-C non démarré
+**Mis à jour le** : 2026-10-12 20:55 (Europe/Paris) — YUNIMOBILE-0011E-C ; PR #8 + correctif CodeRabbit ; SDK 57 non démarré
 
 ## Étape en cours
 
@@ -24,22 +24,48 @@
 | 0.11C Préparation Java/Android et stratégie d’appareil | YUNIMOBILE-0011C | Terminé — diagnostic OK ; CONDITIONAL READY ; préparation native conditionnelle |
 | 0.11D Migration Mapbox → react-native-maps | YUNIMOBILE-0011D | Terminé — fusionné PR #5 (`381396fe…`) ; runtime reporté après migration Expo SDK |
 | 0.11E-A Audit migration Expo SDK 54→55→56→57 | YUNIMOBILE-0011E-A | Terminé — audit approuvé ; CONDITIONAL GO CP1 |
-| 0.11E-B Migration Expo SDK 54 → 55 | YUNIMOBILE-0011E-B | Terminé — migration statique Expo SDK 55 réussie ; 0011E-C non démarré |
+| 0.11E-B Migration Expo SDK 54 → 55 | YUNIMOBILE-0011E-B | Terminé — migration statique Expo SDK 55 réussie ; fusionnée PR #7 (`9b96128…`) |
+| 0.11E-C Migration Expo SDK 55 → 56 | YUNIMOBILE-0011E-C | Terminé — migration statique Expo SDK 56 ; PR #8 ; 2 diagnostics CodeRabbit corrigés ; nitpick refusé ; runtime/native non validés |
 
 ## Ticket actif
 
-Aucun — aucun ticket actif jusqu’au démarrage de **YUNIMOBILE-0011E-C**.
+Aucun.
+
+### Historique — YUNIMOBILE-0011E-C
+
+- **Terminé** — migration **statique** Expo SDK 56 réussie (GO CTO), avec
+  exception Hermes V1 **transitoire** ; aucune validation runtime ou native.
+- Branche `feat/yunimobile-0011e-c-expo-sdk-56` ; base `9b96128…` (main) ;
+  PR #8 ouverte ; SHA publié `5d8aad2…` (amend de `7791b1f…` pour retirer
+  Co-Authored-By ; tree identique).
+- Versions : Expo **~56.0.23** ; React **19.2.3** ; RN **0.85.3** ; Router
+  **~56.2.21** ; react-native-maps **1.27.2**.
+- Gates clôture + rejeu correctif : lint OK ; typecheck OK (± `.expo`,
+  MISMATCH=0) ; export Android OK (1997 modules) ; `expo install --check`
+  OK ; expo-doctor **21/22**, seul **HermesV1VersionCheck**.
+- Tentatives 3/3 : (1) `@expo/dom-webview` ; (2) correction lint ; (3)
+  correction invariants D1–D15. Relance réseau Doctor : **vérification
+  uniquement**, pas une 4ᵉ correction.
+- CodeRabbit PR #8 : **2 Minor acceptés** (`refreshInFlightRef` tribes ;
+  decline invitations sans `items: []`) ; **nitpick `loadBundle` refusé**
+  (pas de défaut fonctionnel ; élargirait le diff).
+- Runtime, build natif et Expo Go **non exécutés** (toujours).
+- SDK **56 interdit à la publication** (palier intermédiaire).
+- Sauvegarde SDK 55 conservée :
+  `C:\tmp\yunimobile-0011e-c-node_modules-sdk55-backup`.
+- Rapport : `docs/engineering/expo-sdk-56-migration.md`.
+- Prochaine étape : **YUNIMOBILE-0011E-D** (SDK 57) — **non commencée**.
 
 ### Historique — YUNIMOBILE-0011E-B
 
 - **Terminé** — migration **statique** Expo SDK 55 réussie (GO CTO).
 - Branche `feat/yunimobile-0011e-b-expo-sdk-55` ; commit de clôture
-  `d61444b74fbb9e5cbef2e884128b3aeeba950ef6` ; PR #7.
+  `d61444b74fbb9e5cbef2e884128b3aeeba950ef6` ; PR #7 fusionnée
+  `9b9612801637cb0e06a2429aa9ae66b8cb6e8b1b`.
 - Runtime, build natif et Expo Go **non exécutés**.
 - Écart des quatre tentatives ENOENT (3 échecs + 4ᵉ hors protocole)
   **conservé** ; ne pas reproduire comme procédure normale.
 - Rapport : `docs/engineering/expo-sdk-55-migration.md`.
-- **0011E-C** (SDK 56) **non démarré**.
 
 ### Résultats — YUNIMOBILE-0011D
 
@@ -449,15 +475,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011E-C** — checkpoint SDK **56** (contrôlé, non durable) —
-   **non démarré**.
-2. Puis checkpoint SDK **57**.
-3. Test Expo Go iPhone **après** checkpoint SDK 57.
-4. Puis **YUNIMOBILE-0011F** — Java/Android + AVD API 35.
-5. Puis **YUNIMOBILE-0011G** — premier development build Android.
-6. Validation iOS native : ticket ultérieur.
+1. **YUNIMOBILE-0011E-D** — migration Expo SDK 56 → **57** (cible) — **non
+   commencée** ; après push/PR/fusion du checkpoint 56 si applicable.
+2. Test Expo Go iPhone **après** checkpoint SDK 57.
+3. Puis **YUNIMOBILE-0011F** — Java/Android + AVD API 35.
+4. Puis **YUNIMOBILE-0011G** — premier development build Android.
+5. Validation iOS native : ticket ultérieur.
 
-0011E-C, 0011F et 0011G non lancés.
+SDK 57, 0011F et 0011G non lancés. SDK 56 **non publiable**.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 

@@ -6,7 +6,7 @@ import {
   isAuthError,
 } from "@yunicity/utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,54 +16,90 @@ import {
   View,
 } from "react-native";
 
+type ScanResource = {
+  key: string;
+  previewLabel: string;
+  offers: ScanRedeemableOffer[];
+  error: string | null;
+};
+
 export default function PartnerScanOffersScreen() {
   const router = useRouter();
   const { qr_secret: qrSecret } = useLocalSearchParams<{ qr_secret: string }>();
+  const requestedKey = qrSecret ?? "";
   const { yunicityApi } = useAuth();
-  const [previewLabel, setPreviewLabel] = useState("");
-  const [offers, setOffers] = useState<ScanRedeemableOffer[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [resource, setResource] = useState<ScanResource | null>(() =>
+    qrSecret
+      ? null
+      : {
+          key: "",
+          previewLabel: "",
+          offers: [],
+          error: "Code Passport manquant.",
+        },
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!qrSecret) {
-      setError("Code Passport manquant.");
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await yunicityApi.scan.resolvePassport({ qr_secret: qrSecret });
-      setPreviewLabel(data.passport.display_label);
-      setOffers(data.offers.filter((o) => !o.already_redeemed));
-    } catch (err) {
-      setError(
-        isAuthError(err)
-          ? humanizeScanError(err.code, err.message)
-          : "Scan impossible.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [qrSecret, yunicityApi]);
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchScanOffers = useCallback(
+    async (secret: string) => {
+      return yunicityApi.scan.resolvePassport({ qr_secret: secret });
+    },
+    [yunicityApi],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const key = requestedKey;
+    void (async () => {
+      try {
+        const data = await fetchScanOffers(key);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key,
+          previewLabel: data.passport.display_label,
+          offers: data.offers.filter((o) => !o.already_redeemed),
+          error: null,
+        });
+        setRedeemError(null);
+      } catch (err) {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key,
+          previewLabel: "",
+          offers: [],
+          error: isAuthError(err)
+            ? humanizeScanError(err.code, err.message)
+            : "Scan impossible.",
+        });
+      }
+    })();
+  }, [fetchScanOffers, requestedKey]);
 
   async function redeem(offerId: string) {
     if (!qrSecret) {
       return;
     }
     setBusyId(offerId);
-    setError(null);
+    setRedeemError(null);
     try {
       const result = await yunicityApi.scan.redeemOffer({
         offer_id: offerId,
         qr_secret: qrSecret,
       });
+      if (!mountedRef.current) return;
       router.replace({
         pathname: "/(protected)/partner-scan/result",
         params: {
@@ -73,17 +109,28 @@ export default function PartnerScanOffersScreen() {
         },
       });
     } catch (err) {
-      setError(
+      if (!mountedRef.current) return;
+      setRedeemError(
         isAuthError(err)
           ? humanizeScanError(err.code, err.message)
           : "Validation impossible.",
       );
     } finally {
-      setBusyId(null);
+      if (mountedRef.current) {
+        setBusyId(null);
+      }
     }
   }
 
-  if (isLoading) {
+  const loading = Boolean(requestedKey) && resource?.key !== requestedKey;
+  const previewLabel = resource?.key === requestedKey ? resource.previewLabel : "";
+  const offers = resource?.key === requestedKey ? resource.offers : [];
+  const error =
+    (resource?.key === requestedKey || (!requestedKey && resource)
+      ? resource?.error
+      : null) ?? redeemError;
+
+  if (loading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator color="#d4a574" />
