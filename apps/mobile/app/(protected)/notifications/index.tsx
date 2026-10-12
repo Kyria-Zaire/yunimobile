@@ -8,7 +8,7 @@ import {
 } from "@yunicity/utils";
 import type { Href } from "expo-router";
 import { Link, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -51,33 +51,110 @@ function NotificationRow({
 export default function NotificationsScreen() {
   const router = useRouter();
   const { yunicityApi } = useAuth();
-  const [items, setItems] = useState<UserNotificationItem[]>([]);
-  const [unread, setUnread] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  type InboxResource = {
+    key: string;
+    items: UserNotificationItem[];
+    unread: number;
+    error: string | null;
+  };
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const data = await yunicityApi.notifications.listInbox(50);
-      setItems(data.items);
-      setUnread(data.unread_count);
-    } catch {
-      setError("Impossible de charger les notifications.");
-    }
+  const inboxKey = "inbox";
+  const [resource, setResource] = useState<InboxResource | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const refreshGenRef = useRef(0);
+
+  const fetchInbox = useCallback(async () => {
+    return yunicityApi.notifications.listInbox(50);
   }, [yunicityApi]);
 
   useEffect(() => {
-    void load().finally(() => setLoading(false));
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+      refreshGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    void (async () => {
+      try {
+        const data = await fetchInbox();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: inboxKey,
+          items: data.items,
+          unread: data.unread_count,
+          error: null,
+        });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: inboxKey,
+          items: [],
+          unread: 0,
+          error: "Impossible de charger les notifications.",
+        });
+      }
+    })();
+  }, [fetchInbox]);
 
   async function onRefresh() {
+    const refreshGen = ++refreshGenRef.current;
+    const dataGen = ++dataGenRef.current;
     setRefreshing(true);
     try {
-      await load();
+      const data = await fetchInbox();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key: inboxKey,
+        items: data.items,
+        unread: data.unread_count,
+        error: null,
+      });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === inboxKey
+          ? { ...prev, error: "Impossible de charger les notifications." }
+          : {
+              key: inboxKey,
+              items: [],
+              unread: 0,
+              error: "Impossible de charger les notifications.",
+            },
+      );
     } finally {
-      setRefreshing(false);
+      if (mountedRef.current && refreshGen === refreshGenRef.current) {
+        setRefreshing(false);
+      }
+    }
+  }
+
+  async function onRetry() {
+    const dataGen = ++dataGenRef.current;
+    setResource(null);
+    try {
+      const data = await fetchInbox();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key: inboxKey,
+        items: data.items,
+        unread: data.unread_count,
+        error: null,
+      });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key: inboxKey,
+        items: [],
+        unread: 0,
+        error: "Impossible de charger les notifications.",
+      });
     }
   }
 
@@ -85,10 +162,18 @@ export default function NotificationsScreen() {
     if (!item.is_read) {
       try {
         await yunicityApi.notifications.markNotificationRead(item.id);
-        setItems((prev) =>
-          prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n)),
+        if (!mountedRef.current) return;
+        setResource((prev) =>
+          prev?.key === inboxKey
+            ? {
+                ...prev,
+                items: prev.items.map((n) =>
+                  n.id === item.id ? { ...n, is_read: true } : n,
+                ),
+                unread: Math.max(0, prev.unread - 1),
+              }
+            : prev,
         );
-        setUnread((c) => Math.max(0, c - 1));
       } catch {
         /* best effort */
       }
@@ -96,6 +181,11 @@ export default function NotificationsScreen() {
     const href = resolveNotificationDeeplink(item.deeplink, "mobile");
     router.push(href as Href);
   }
+
+  const loading = resource?.key !== inboxKey;
+  const error = resource?.key === inboxKey ? resource.error : null;
+  const items = resource?.key === inboxKey ? resource.items : [];
+  const unread = resource?.key === inboxKey ? resource.unread : 0;
 
   if (loading) {
     return (
@@ -109,7 +199,7 @@ export default function NotificationsScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
-        <Pressable style={styles.retryBtn} onPress={() => void load()}>
+        <Pressable style={styles.retryBtn} onPress={() => void onRetry()}>
           <Text style={styles.retryText}>Réessayer</Text>
         </Pressable>
       </View>
@@ -130,8 +220,16 @@ export default function NotificationsScreen() {
           <Pressable
             onPress={() =>
               void yunicityApi.notifications.markAllNotificationsRead().then(() => {
-                setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
-                setUnread(0);
+                if (!mountedRef.current) return;
+                setResource((prev) =>
+                  prev?.key === inboxKey
+                    ? {
+                        ...prev,
+                        items: prev.items.map((n) => ({ ...n, is_read: true })),
+                        unread: 0,
+                      }
+                    : prev,
+                );
               })
             }
           >

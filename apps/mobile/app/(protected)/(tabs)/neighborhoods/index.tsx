@@ -12,7 +12,7 @@ import {
   neighborhoodAmbianceLine,
 } from "@yunicity/utils";
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -56,39 +56,91 @@ function NeighborhoodCardMobile({
   );
 }
 
+type NeighborhoodsResource = {
+  key: string;
+  items: Neighborhood[];
+  error: string | null;
+};
+
 export default function NeighborhoodsTabScreen() {
   const router = useRouter();
   const { yunicityApi: api, user } = useAuth();
   const city = user?.city ?? "Reims";
-  const [items, setItems] = useState<Neighborhood[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [resource, setResource] = useState<NeighborhoodsResource | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const data = await api.neighborhoods.listNeighborhoods({ city, page_size: 20 });
-      setItems(data.items);
-    } catch {
-      setError(NEIGHBORHOODS_ERROR);
-    } finally {
-      setLoading(false);
-    }
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const refreshGenRef = useRef(0);
+
+  const fetchNeighborhoods = useCallback(async () => {
+    return api.neighborhoods.listNeighborhoods({ city, page_size: 20 });
   }, [api.neighborhoods, city]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+      refreshGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    const key = city;
+    void (async () => {
+      try {
+        const data = await fetchNeighborhoods();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, items: data.items, error: null });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, items: [], error: NEIGHBORHOODS_ERROR });
+      }
+    })();
+  }, [fetchNeighborhoods, city]);
 
   async function onRefresh() {
+    const refreshGen = ++refreshGenRef.current;
+    const dataGen = ++dataGenRef.current;
+    const key = city;
     setRefreshing(true);
     try {
-      await load();
+      const data = await fetchNeighborhoods();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, items: data.items, error: null });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === key
+          ? { ...prev, error: NEIGHBORHOODS_ERROR }
+          : { key, items: [], error: NEIGHBORHOODS_ERROR },
+      );
     } finally {
-      setRefreshing(false);
+      if (mountedRef.current && refreshGen === refreshGenRef.current) {
+        setRefreshing(false);
+      }
     }
   }
+
+  async function onRetry() {
+    const dataGen = ++dataGenRef.current;
+    const key = city;
+    setResource(null);
+    try {
+      const data = await fetchNeighborhoods();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, items: data.items, error: null });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, items: [], error: NEIGHBORHOODS_ERROR });
+    }
+  }
+
+  const loading = resource?.key !== city;
+  const error = resource?.key === city ? resource.error : null;
+  const items = resource?.key === city ? resource.items : [];
 
   if (loading) {
     return (
@@ -103,7 +155,7 @@ export default function NeighborhoodsTabScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.error}>{error}</Text>
-        <Pressable style={styles.retryBtn} onPress={() => void load()}>
+        <Pressable style={styles.retryBtn} onPress={() => void onRetry()}>
           <Text style={styles.retryText}>{NEIGHBORHOODS_RETRY}</Text>
         </Pressable>
       </View>

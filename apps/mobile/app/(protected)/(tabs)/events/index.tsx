@@ -10,7 +10,7 @@ import {
   formatTerritorialLine,
 } from "@yunicity/utils";
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,6 +20,12 @@ import {
   Text,
   View,
 } from "react-native";
+
+type EventsResource = {
+  key: string;
+  events: LocalEvent[];
+  error: string | null;
+};
 
 function EventRow({ event }: { event: LocalEvent }) {
   const router = useRouter();
@@ -40,37 +46,84 @@ function EventRow({ event }: { event: LocalEvent }) {
 
 export default function EventsTabScreen() {
   const { yunicityApi: api, user } = useAuth();
-  const [events, setEvents] = useState<LocalEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cityKey = user?.city ?? "";
+  const [resource, setResource] = useState<EventsResource | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const response = await api.events.listEvents({
-        city: user?.city ?? undefined,
-      });
-      setEvents(response.items);
-    } catch {
-      setError("Impossible de charger les moments locaux.");
-    } finally {
-      setLoading(false);
-    }
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const refreshGenRef = useRef(0);
+
+  const fetchEvents = useCallback(async () => {
+    return api.events.listEvents({
+      city: user?.city ?? undefined,
+    });
   }, [api.events, user?.city]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+      refreshGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    const key = cityKey;
+    void (async () => {
+      try {
+        const response = await fetchEvents();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, events: response.items, error: null });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, events: [], error: "Impossible de charger les moments locaux." });
+      }
+    })();
+  }, [fetchEvents, cityKey]);
 
   async function onRefresh() {
+    const refreshGen = ++refreshGenRef.current;
+    const dataGen = ++dataGenRef.current;
+    const key = cityKey;
     setRefreshing(true);
     try {
-      await load();
+      const response = await fetchEvents();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, events: response.items, error: null });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === key
+          ? { ...prev, error: "Impossible de charger les moments locaux." }
+          : { key, events: [], error: "Impossible de charger les moments locaux." },
+      );
     } finally {
-      setRefreshing(false);
+      if (mountedRef.current && refreshGen === refreshGenRef.current) {
+        setRefreshing(false);
+      }
     }
   }
+
+  async function onRetry() {
+    const dataGen = ++dataGenRef.current;
+    const key = cityKey;
+    setResource(null);
+    try {
+      const response = await fetchEvents();
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, events: response.items, error: null });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, events: [], error: "Impossible de charger les moments locaux." });
+    }
+  }
+
+  const loading = resource?.key !== cityKey;
+  const error = resource?.key === cityKey ? resource.error : null;
+  const events = resource?.key === cityKey ? resource.events : [];
 
   return (
     <ScrollView
@@ -87,7 +140,7 @@ export default function EventsTabScreen() {
       ) : error ? (
         <View style={styles.errorBlock}>
           <Text style={styles.empty}>{error}</Text>
-          <Pressable style={styles.retryBtn} onPress={() => void load()}>
+          <Pressable style={styles.retryBtn} onPress={() => void onRetry()}>
             <Text style={styles.retryText}>Réessayer</Text>
           </Pressable>
         </View>

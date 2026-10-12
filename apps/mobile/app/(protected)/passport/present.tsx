@@ -1,7 +1,7 @@
 import { useAuth } from "@/lib/auth-provider";
 import { passportTheme } from "@/components/passport/passport-theme";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -17,28 +17,58 @@ export default function PresentPassportScreen() {
   const router = useRouter();
   const { yunicityApi } = useAuth();
   const { width } = useWindowDimensions();
-  const [qrPayload, setQrPayload] = useState<string | null>(null);
-  const [passportNumber, setPassportNumber] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  type PassportResource = {
+    key: string;
+    qrPayload: string | null;
+    passportNumber: string;
+    error: string | null;
+  };
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await yunicityApi.getPassportQr();
-      setQrPayload(data.qr_payload);
-      setPassportNumber(data.passport_number);
-    } catch (err) {
-      setError(isAuthError(err) ? err.message : "Impossible d’afficher ton Passport.");
-    } finally {
-      setIsLoading(false);
-    }
+  const passportKey = "present";
+  const [resource, setResource] = useState<PassportResource | null>(null);
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchPassportQr = useCallback(async () => {
+    return yunicityApi.getPassportQr();
   }, [yunicityApi]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    void (async () => {
+      try {
+        const data = await fetchPassportQr();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: passportKey,
+          qrPayload: data.qr_payload,
+          passportNumber: data.passport_number,
+          error: null,
+        });
+      } catch (err) {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key: passportKey,
+          qrPayload: null,
+          passportNumber: "",
+          error: isAuthError(err) ? err.message : "Impossible d’afficher ton Passport.",
+        });
+      }
+    })();
+  }, [fetchPassportQr]);
+
+  const isLoading = resource?.key !== passportKey;
+  const error = resource?.key === passportKey ? resource.error : null;
+  const qrPayload = resource?.key === passportKey ? resource.qrPayload : null;
+  const passportNumber = resource?.key === passportKey ? resource.passportNumber : "";
 
   const qrSize = Math.min(width - 80, 320);
 

@@ -17,7 +17,7 @@ import {
   tribeVisibilityLabel,
 } from "@yunicity/utils";
 import { useRouter, type Href } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -83,61 +83,177 @@ function TribeCardMobile({
   );
 }
 
+type TribesResource = {
+  key: string;
+  items: Tribe[];
+  page: number;
+  total: number;
+  error: string | null;
+};
+
 export default function TribesTabScreen() {
   const router = useRouter();
   const { yunicityApi: api, user } = useAuth();
   const city = user?.city ?? "Reims";
-  const [items, setItems] = useState<Tribe[]>([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [resource, setResource] = useState<TribesResource | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [joiningSlug, setJoiningSlug] = useState<string | null>(null);
 
-  const loadPage = useCallback(
-    async (pageNum: number, mode: "initial" | "more" | "refresh") => {
-      if (mode === "initial") {
-        setLoading(true);
-      } else if (mode === "more") {
-        setLoadingMore(true);
-      }
-      setError(null);
-      try {
-        const data = await api.tribes.listTribes({
-          city,
-          page: pageNum,
-          page_size: PAGE_SIZE,
-        });
-        setTotal(data.total);
-        setPage(pageNum);
-        setItems((prev) => (mode === "more" ? [...prev, ...data.items] : data.items));
-      } catch {
-        setError(TRIBES_ERROR);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-        setRefreshing(false);
-      }
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const refreshGenRef = useRef(0);
+  const loadMoreGenRef = useRef(0);
+
+  const fetchTribesPage = useCallback(
+    async (pageNum: number) => {
+      return api.tribes.listTribes({
+        city,
+        page: pageNum,
+        page_size: PAGE_SIZE,
+      });
     },
     [api.tribes, city],
   );
 
   useEffect(() => {
-    void loadPage(1, "initial");
-  }, [loadPage]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+      refreshGenRef.current += 1;
+      loadMoreGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    const key = city;
+    void (async () => {
+      try {
+        const data = await fetchTribesPage(1);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key,
+          items: data.items,
+          page: 1,
+          total: data.total,
+          error: null,
+        });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, items: [], page: 1, total: 0, error: TRIBES_ERROR });
+      }
+    })();
+  }, [fetchTribesPage, city]);
 
   async function onRefresh() {
+    const refreshGen = ++refreshGenRef.current;
+    const dataGen = ++dataGenRef.current;
+    const key = city;
     setRefreshing(true);
-    await loadPage(1, "refresh");
+    try {
+      const data = await fetchTribesPage(1);
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key,
+        items: data.items,
+        page: 1,
+        total: data.total,
+        error: null,
+      });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === key
+          ? { ...prev, error: TRIBES_ERROR }
+          : { key, items: [], page: 1, total: 0, error: TRIBES_ERROR },
+      );
+    } finally {
+      if (mountedRef.current && refreshGen === refreshGenRef.current) {
+        setRefreshing(false);
+      }
+    }
   }
 
   function loadMore() {
-    if (loadingMore || items.length >= total) {
+    const current = resource?.key === city ? resource : null;
+    if (!current || loadingMore || current.items.length >= current.total) {
       return;
     }
-    void loadPage(page + 1, "more");
+    const loadMoreGen = ++loadMoreGenRef.current;
+    const dataGen = ++dataGenRef.current;
+    const nextPage = current.page + 1;
+    const key = city;
+    setLoadingMore(true);
+    void (async () => {
+      try {
+        const data = await fetchTribesPage(nextPage);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource((prev) => {
+          if (!prev || prev.key !== key) return prev;
+          return {
+            ...prev,
+            page: nextPage,
+            total: data.total,
+            items: [...prev.items, ...data.items],
+            error: null,
+          };
+        });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource((prev) =>
+          prev?.key === key ? { ...prev, error: TRIBES_ERROR } : prev,
+        );
+      } finally {
+        if (mountedRef.current && loadMoreGen === loadMoreGenRef.current) {
+          setLoadingMore(false);
+        }
+      }
+    })();
+  }
+
+  async function onRetry() {
+    const dataGen = ++dataGenRef.current;
+    const key = city;
+    setResource(null);
+    try {
+      const data = await fetchTribesPage(1);
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key,
+        items: data.items,
+        page: 1,
+        total: data.total,
+        error: null,
+      });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({ key, items: [], page: 1, total: 0, error: TRIBES_ERROR });
+    }
+  }
+
+  async function reloadAfterJoin() {
+    const dataGen = ++dataGenRef.current;
+    const key = city;
+    try {
+      const data = await fetchTribesPage(1);
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource({
+        key,
+        items: data.items,
+        page: 1,
+        total: data.total,
+        error: null,
+      });
+    } catch {
+      if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+      setResource((prev) =>
+        prev?.key === key
+          ? { ...prev, error: TRIBES_ERROR }
+          : { key, items: [], page: 1, total: 0, error: TRIBES_ERROR },
+      );
+    }
   }
 
   function confirmJoin(tribe: Tribe) {
@@ -149,13 +265,19 @@ export default function TribesTabScreen() {
           setJoiningSlug(tribe.slug);
           void api.tribes
             .joinTribe(tribe.slug, city, { charter_accepted: true })
-            .then(() => loadPage(1, "refresh"))
+            .then(() => reloadAfterJoin())
             .catch(() => Alert.alert("Impossible de rejoindre cette tribu pour le moment."))
-            .finally(() => setJoiningSlug(null));
+            .finally(() => {
+              if (mountedRef.current) setJoiningSlug(null);
+            });
         },
       },
     ]);
   }
+
+  const loading = resource?.key !== city;
+  const error = resource?.key === city ? resource.error : null;
+  const items = resource?.key === city ? resource.items : [];
 
   if (loading) {
     return (
@@ -170,7 +292,7 @@ export default function TribesTabScreen() {
     return (
       <View style={styles.centered}>
         <Text style={styles.error}>{error}</Text>
-        <Pressable style={styles.retryBtn} onPress={() => void loadPage(1, "initial")}>
+        <Pressable style={styles.retryBtn} onPress={() => void onRetry()}>
           <Text style={styles.retryText}>{TRIBES_RETRY}</Text>
         </Pressable>
       </View>

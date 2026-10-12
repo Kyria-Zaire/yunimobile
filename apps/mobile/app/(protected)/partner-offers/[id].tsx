@@ -16,7 +16,7 @@ import {
   isAuthError,
 } from "@yunicity/utils";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -28,51 +28,85 @@ import {
   View,
 } from "react-native";
 
+type OfferResource = {
+  key: string;
+  offer: PartnerOfferManagement | null;
+  error: string | null;
+};
+
 export default function PartnerOfferDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const requestedKey = id ?? "";
   const { yunicityApi } = useAuth();
-  const [offer, setOffer] = useState<PartnerOfferManagement | null>(null);
+  const [resource, setResource] = useState<OfferResource | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [offerType, setOfferType] = useState<PartnerOfferType>("drink");
   const [isFlash, setIsFlash] = useState(false);
   const [flashEndsAt, setFlashEndsAt] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchOffer = useCallback(
+    async (offerId: string) => {
       const data = await yunicityApi.partnerOffers.listOffers({ page_size: 100 });
-      const found = data.items.find((o) => o.id === id);
-      if (!found) {
-        setError("Offre introuvable.");
-        return;
-      }
-      setOffer(found);
-      setTitle(found.title);
-      setDescription(found.description ?? "");
-      setOfferType(found.offer_type);
-      setIsFlash(found.is_flash);
-      setFlashEndsAt(toDatetimeLocalValue(found.flash_ends_at));
-    } catch (err) {
-      setError(isAuthError(err) ? err.message : "Chargement impossible.");
-    } finally {
-      setLoading(false);
-    }
-  }, [yunicityApi, id]);
+      return data.items.find((o) => o.id === offerId) ?? null;
+    },
+    [yunicityApi],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const key = requestedKey;
+    void (async () => {
+      try {
+        const found = await fetchOffer(key);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        if (!found) {
+          setResource({ key, offer: null, error: "Offre introuvable." });
+          return;
+        }
+        setResource({ key, offer: found, error: null });
+        setTitle(found.title);
+        setDescription(found.description ?? "");
+        setOfferType(found.offer_type);
+        setIsFlash(found.is_flash);
+        setFlashEndsAt(toDatetimeLocalValue(found.flash_ends_at));
+        setFormError(null);
+      } catch (err) {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({
+          key,
+          offer: null,
+          error: isAuthError(err) ? err.message : "Chargement impossible.",
+        });
+      }
+    })();
+  }, [fetchOffer, requestedKey]);
+
+  const loading = Boolean(requestedKey) && resource?.key !== requestedKey;
+  const offer = resource?.key === requestedKey ? resource.offer : null;
+  const error =
+    (resource?.key === requestedKey ? resource.error : null) ?? formError;
 
   async function save() {
     if (!offer) {
       return;
     }
     setBusy(true);
-    setError(null);
+    setFormError(null);
     try {
       const updated = await yunicityApi.partnerOffers.updateOffer(offer.id, {
         title: title.trim(),
@@ -84,11 +118,15 @@ export default function PartnerOfferDetailScreen() {
             ? fromDatetimeLocalValue(flashEndsAt)
             : null,
       });
-      setOffer(updated);
+      if (!mountedRef.current) return;
+      setResource({ key: requestedKey, offer: updated, error: null });
     } catch (err) {
-      setError(isAuthError(err) ? err.message : "Enregistrement impossible.");
+      if (!mountedRef.current) return;
+      setFormError(isAuthError(err) ? err.message : "Enregistrement impossible.");
     } finally {
-      setBusy(false);
+      if (mountedRef.current) {
+        setBusy(false);
+      }
     }
   }
 
@@ -99,11 +137,15 @@ export default function PartnerOfferDetailScreen() {
     setBusy(true);
     try {
       const updated = await yunicityApi.partnerOffers.submitOffer(offer.id);
-      setOffer(updated);
+      if (!mountedRef.current) return;
+      setResource({ key: requestedKey, offer: updated, error: null });
     } catch (err) {
-      setError(isAuthError(err) ? err.message : "Envoi impossible.");
+      if (!mountedRef.current) return;
+      setFormError(isAuthError(err) ? err.message : "Envoi impossible.");
     } finally {
-      setBusy(false);
+      if (mountedRef.current) {
+        setBusy(false);
+      }
     }
   }
 

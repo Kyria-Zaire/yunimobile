@@ -10,7 +10,7 @@ import {
 } from "@yunicity/utils";
 import type { Href } from "expo-router";
 import { Link, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -32,29 +32,45 @@ export default function ProfileTabScreen() {
   const [visibility, setVisibility] = useState<ProfileVisibility>("public");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadKey, setLoadKey] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+  const profileKey = "me";
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await yunicityApi.getProfileMe();
-      setProfile(data);
-      setDisplayName(data.display_name ?? "");
-      setBio(data.bio ?? "");
-      setCity(data.city ?? "");
-      setInterests(data.interests);
-      setVisibility(data.visibility);
-    } catch (err) {
-      setError(isAuthError(err) ? err.message : "Erreur de chargement.");
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchProfile = useCallback(async () => {
+    return yunicityApi.getProfileMe();
   }, [yunicityApi]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    const dataGen = ++dataGenRef.current;
+    void (async () => {
+      try {
+        const data = await fetchProfile();
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setProfile(data);
+        setDisplayName(data.display_name ?? "");
+        setBio(data.bio ?? "");
+        setCity(data.city ?? "");
+        setInterests(data.interests);
+        setVisibility(data.visibility);
+        setError(null);
+        setLoadKey(profileKey);
+      } catch (err) {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setError(isAuthError(err) ? err.message : "Erreur de chargement.");
+        setLoadKey(profileKey);
+      }
+    })();
+  }, [fetchProfile]);
 
   async function save() {
     setIsSaving(true);
@@ -67,12 +83,16 @@ export default function ProfileTabScreen() {
         interests,
         visibility,
       });
+      if (!mountedRef.current) return;
       setProfile(updated);
       setMessage("Profil enregistré.");
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(isAuthError(err) ? err.message : "Échec.");
     } finally {
-      setIsSaving(false);
+      if (mountedRef.current) {
+        setIsSaving(false);
+      }
     }
   }
 
@@ -80,14 +100,20 @@ export default function ProfileTabScreen() {
     setIsSaving(true);
     try {
       const updated = await yunicityApi.completeProfileOnboarding({ city, interests });
+      if (!mountedRef.current) return;
       setProfile(updated);
       setMessage("Profil activé.");
     } catch (err) {
+      if (!mountedRef.current) return;
       setError(isAuthError(err) ? err.message : "Ville + intérêt requis.");
     } finally {
-      setIsSaving(false);
+      if (mountedRef.current) {
+        setIsSaving(false);
+      }
     }
   }
+
+  const isLoading = loadKey !== profileKey;
 
   if (isLoading) {
     return (

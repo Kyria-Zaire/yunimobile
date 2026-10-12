@@ -9,7 +9,7 @@ import {
   formatTerritorialLine,
 } from "@yunicity/utils";
 import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,37 +19,70 @@ import {
   View,
 } from "react-native";
 
+type EventResource = {
+  key: string;
+  event: LocalEvent | null;
+};
+
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const requestedKey = id ?? "";
   const { yunicityApi: api } = useAuth();
-  const [event, setEvent] = useState<LocalEvent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [resource, setResource] = useState<EventResource | null>(null);
   const [toggling, setToggling] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    try {
-      setEvent(await api.events.getEvent(id));
-    } finally {
-      setLoading(false);
-    }
-  }, [api.events, id]);
+  const mountedRef = useRef(true);
+  const dataGenRef = useRef(0);
+
+  const fetchEvent = useCallback(async (eventId: string) => {
+    return api.events.getEvent(eventId);
+  }, [api.events]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      dataGenRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!requestedKey) return;
+    const dataGen = ++dataGenRef.current;
+    const key = requestedKey;
+    void (async () => {
+      try {
+        const data = await fetchEvent(key);
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, event: data });
+      } catch {
+        if (!mountedRef.current || dataGen !== dataGenRef.current) return;
+        setResource({ key, event: null });
+      }
+    })();
+  }, [fetchEvent, requestedKey]);
 
   async function toggleInterest() {
+    const event = resource?.key === requestedKey ? resource.event : null;
     if (!event) return;
     setToggling(true);
     try {
       const result = await api.events.toggleInterest(event.id);
-      setEvent({ ...event, interested_by_me: result.interested });
+      if (!mountedRef.current) return;
+      setResource((prev) =>
+        prev?.key === requestedKey && prev.event
+          ? { ...prev, event: { ...prev.event, interested_by_me: result.interested } }
+          : prev,
+      );
     } finally {
-      setToggling(false);
+      if (mountedRef.current) {
+        setToggling(false);
+      }
     }
   }
+
+  const loading = Boolean(requestedKey) && resource?.key !== requestedKey;
+  const event = resource?.key === requestedKey ? resource.event : null;
 
   if (loading) {
     return (
