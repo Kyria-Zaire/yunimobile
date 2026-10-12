@@ -24,7 +24,6 @@
       "output": "static"
     },
     "plugins": [
-      "@rnmapbox/maps",
       "expo-router",
       [
         "expo-camera",

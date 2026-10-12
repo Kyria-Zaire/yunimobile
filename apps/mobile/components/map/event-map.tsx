@@ -1,12 +1,16 @@
 import { feedTheme } from "@/components/feed/feed-theme";
+import {
+  regionToBbox,
+  zoomToLatitudeDelta,
+} from "@/components/map/map-region";
 import type { MapBbox, MapEventItem } from "@yunicity/types";
 import { MAP_RECENTER, resolveCityMapCenter } from "@yunicity/utils";
-import Mapbox, { Camera, MapView, PointAnnotation } from "@rnmapbox/maps";
-import type { Camera as MapboxCamera } from "@rnmapbox/maps";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import MapView, { Marker, type Region } from "react-native-maps";
 
 const MARKER_COLOR = "#2A2FFF";
+const CITY_ANIMATION_MS = 800;
 
 type EventMapProps = {
   city: string;
@@ -17,17 +21,16 @@ type EventMapProps = {
   onRecenterPress: () => void;
 };
 
-function visibleBoundsToBbox(bounds: [number[], number[]]): MapBbox {
-  const [ne, sw] = bounds;
-  const neLon = ne[0] ?? 0;
-  const neLat = ne[1] ?? 0;
-  const swLon = sw[0] ?? 0;
-  const swLat = sw[1] ?? 0;
+function cityToRegion(city: string): Region {
+  const center = resolveCityMapCenter(city);
+  const latitudeDelta = zoomToLatitudeDelta(center.zoom);
+  const longitudeDelta =
+    latitudeDelta / Math.max(Math.cos((center.latitude * Math.PI) / 180), 0.01);
   return {
-    lon_min: Math.min(neLon, swLon),
-    lon_max: Math.max(neLon, swLon),
-    lat_min: Math.min(neLat, swLat),
-    lat_max: Math.max(neLat, swLat),
+    latitude: center.latitude,
+    longitude: center.longitude,
+    latitudeDelta,
+    longitudeDelta,
   };
 }
 
@@ -40,74 +43,65 @@ export function EventMap({
   onRecenterPress,
 }: EventMapProps) {
   const mapRef = useRef<MapView>(null);
-  const cameraRef = useRef<MapboxCamera>(null);
-  const center = resolveCityMapCenter(city);
+  const skipCityAnimationRef = useRef(true);
+  const { latitude: centerLatitude, longitude: centerLongitude, zoom: centerZoom } =
+    useMemo(() => resolveCityMapCenter(city), [city]);
+  const initialRegion = useMemo(() => cityToRegion(city), [city]);
 
-  const syncBounds = useCallback(async () => {
-    if (!mapRef.current) return;
-    try {
-      const bounds = await mapRef.current.getVisibleBounds();
-      if (!bounds) return;
-      onBboxChange(visibleBoundsToBbox(bounds));
-    } catch {
-      // Carte pas encore prête
+  // initialRegion applies only on mount; animate when the resolved city center changes.
+  useEffect(() => {
+    if (skipCityAnimationRef.current) {
+      skipCityAnimationRef.current = false;
+      return;
     }
-  }, [onBboxChange]);
+    mapRef.current?.animateToRegion(cityToRegion(city), CITY_ANIMATION_MS);
+  }, [city, centerLatitude, centerLongitude, centerZoom]);
+
+  const handleRegionChangeComplete = useCallback(
+    (region: Region) => {
+      onBboxChange(regionToBbox(region));
+    },
+    [onBboxChange],
+  );
 
   const handleRecenter = useCallback(() => {
-    const next = resolveCityMapCenter(city);
-    cameraRef.current?.setCamera({
-      centerCoordinate: [next.longitude, next.latitude],
-      zoomLevel: next.zoom,
-      animationDuration: 800,
-    });
+    const next = cityToRegion(city);
+    mapRef.current?.animateToRegion(next, CITY_ANIMATION_MS);
     onRecenterPress();
-    void syncBounds();
-  }, [city, onRecenterPress, syncBounds]);
+    onBboxChange(regionToBbox(next));
+  }, [city, onBboxChange, onRecenterPress]);
 
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
         style={styles.map}
-        styleURL={Mapbox.StyleURL.Light}
-        compassEnabled={false}
-        scaleBarEnabled={false}
-        logoEnabled={false}
-        attributionEnabled={false}
-        onDidFinishLoadingMap={() => {
-          void syncBounds();
+        initialRegion={initialRegion}
+        rotateEnabled={false}
+        pitchEnabled={false}
+        onMapReady={() => {
+          onBboxChange(regionToBbox(initialRegion));
         }}
-        onRegionDidChange={() => {
-          void syncBounds();
-        }}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
-        <Camera
-          ref={cameraRef}
-          defaultSettings={{
-            centerCoordinate: [center.longitude, center.latitude],
-            zoomLevel: center.zoom,
-          }}
-        />
         {events.map((event) => (
-          <PointAnnotation
+          <Marker
             key={event.id}
-            id={event.id}
-            coordinate={[event.longitude, event.latitude]}
-            onSelected={() => onSelectEvent(event.id)}
-            onDeselected={() => {
-              if (selectedEventId === event.id) onSelectEvent(null);
+            identifier={event.id}
+            coordinate={{
+              latitude: event.latitude,
+              longitude: event.longitude,
             }}
+            onPress={() => onSelectEvent(event.id)}
+            accessibilityLabel={event.title}
           >
-            <Pressable
-              onPress={() => onSelectEvent(event.id)}
+            <View
               style={[
                 styles.marker,
                 selectedEventId === event.id ? styles.markerSelected : null,
               ]}
-              accessibilityLabel={event.title}
             />
-          </PointAnnotation>
+          </Marker>
         ))}
       </MapView>
       <Pressable style={styles.recenterBtn} onPress={handleRecenter}>
