@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-13 02:45 (Europe/Paris) — YUNIMOBILE-0011G terminé ; priorité API isolée iPhone ; 0011H non lancé
+**Mis à jour le** : 2026-10-13 09:20 (Europe/Paris) — YUNIMOBILE-0011H terminé ; config API mobile préparée ; 0011I proposé non lancé
 
 ## Étape en cours
 
@@ -30,10 +30,26 @@
 | 0.11E-E Audit SDK 58 et stratégie runtime | YUNIMOBILE-0011E-E | Terminé — audit SDK 58 et stratégie runtime réalisés ; Option E |
 | 0.11F-A Environnement Android et AVD API 35 | YUNIMOBILE-0011F-A | Terminé — diagnostic OK ; préparation bloquée (JDK 17 + RAM) |
 | 0.11G Preuves runtime iPhone | YUNIMOBILE-0011G | Terminé — démarrage iPhone consigné ; API/auth/carte/session non validés |
+| 0.11H Préparation API mobile isolée | YUNIMOBILE-0011H | Terminé — config statique préparée ; build/lancement/API iPhone non exécutés |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011H
+
+- **Terminé** — configuration statique `ops/mobile-dev` préparée (Compose +
+  `.env.example`) ; runtime image sans bind `/app` ; post-revue appliquée.
+- Build, lancement et accès API iPhone : **non exécutés**.
+- Dernière mesure RAM : **1,34 Gio** libres → lancement **BLOCKED** ;
+  ressources et contexte de build **à revérifier** avant toute exécution.
+- Conditions pré-build consignées : instantané SHA hors worktree Web (non
+  créé) ; contexte sans secret ; deps non verrouillées via `uv.lock` ;
+  init volume neuf (extensions + base test vide, pas de seed) ; pas de
+  réutilisation QA/prod.
+- Rapport : `docs/engineering/mobile-api-isolation-plan.md`.
+- Prochain ticket proposé : **YUNIMOBILE-0011I** — construction et validation
+  API mobile isolée (**non créé / non lancé**).
 
 ### Historique — YUNIMOBILE-0011G
 
@@ -548,12 +564,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011H** — préparation de l’environnement API mobile isolé
-   (**non lancé** ; fichier ticket non créé).
+1. **YUNIMOBILE-0011I** — construction et validation API mobile isolée
+   (**non créé / non lancé**) ; revérifier RAM, instantané SHA, contexte de
+   build et secrets `change-me` avant exécution ; préserver QA 8010.
 2. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
    ressources et priorité le permettront.
 3. SDK 58 beta / EAS iOS : **non commencés**.
 
+API mobile isolée : configuration prête (0011H) ; build / runtime non lancés.
 Preuves démarrage iPhone consignées (0011G, Kyria) ; API / auth / carte /
 session encore à valider.
 
