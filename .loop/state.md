@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-13 09:40 (Europe/Paris) — YUNIMOBILE-0011H terminé ; diagnostics PR #13 acceptés (contexte Docker / DATABASE_URL) ; 0011I non lancé
+**Mis à jour le** : 2026-10-13 12:05 (Europe/Paris) — YUNIMOBILE-0011J terminé (test auth iPhone partiel consigné) ; 0011I non lancé
 
 ## Étape en cours
 
@@ -31,10 +31,27 @@
 | 0.11F-A Environnement Android et AVD API 35 | YUNIMOBILE-0011F-A | Terminé — diagnostic OK ; préparation bloquée (JDK 17 + RAM) |
 | 0.11G Preuves runtime iPhone | YUNIMOBILE-0011G | Terminé — démarrage iPhone consigné ; API/auth/carte/session non validés |
 | 0.11H Préparation API mobile isolée | YUNIMOBILE-0011H | Terminé — config statique préparée ; build/lancement/API iPhone non exécutés |
+| 0.11J Auth iPhone Preview | YUNIMOBILE-0011J | Terminé — test auth iPhone partiel consigné ; Reload NON TESTÉE |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011J
+
+- **Terminé** — test auth iPhone partiel consigné (API Preview).
+- Branche : `docs/yunimobile-0011j-iphone-auth-preview` ; fichier
+  `.loop/tickets/YUNIMOBILE-0011J.md`.
+- Connectivité Preview : prouvée (capture health, 2026-10-13).
+- **Déclaration Kyria** : connexion OK (compte Preview existant) ; zone
+  protégée accessible ; fil local et profil affichés ; déconnexion et
+  suite conformes. Identités / contenu publications **non** retranscrits.
+- **Captures** : appui utilisateur, non intégrées au dépôt.
+- Persistance après Reload : **NON TESTÉE**.
+- **Non validés** : validation globale auth/sécurité ; carte ; expiration
+  / refresh session ; builds natifs.
+- Metro session Preview arrêté ; 0011I / mobile-dev **non lancés**.
+- Aucun push ni merge à la clôture.
 
 ### Historique — YUNIMOBILE-0011H
 
@@ -537,8 +554,11 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   installée ; mémoire limitée au diagnostic 0011F-A. **0011F-JDK17** /
   reprise AVD : non lancés. Aucun JDK installé ni achat Apple requis pour
   le smoke Expo Go iPhone.
-- API mobile depuis iPhone : **non validée** (secours `127.0.0.1:8010` ;
-  8010 = QA Web localhost). Auth / carte / session : non validées.
+- API mobile depuis iPhone : **connectivité Preview prouvée** ; parcours
+  manuel login → zone protégée → logout **consigné** (0011J, déclaration
+  Kyria + captures non retranscrites). **Pas** de validation globale
+  auth/sécurité. Reload session : **NON TESTÉE**. Carte, refresh /
+  expiration, builds natifs : **non validés**.
 
 ### Détail technique — YUNIMOBILE-0011E-B (complément historique)
 
@@ -567,16 +587,19 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011I** — construction et validation API mobile isolée
-   (**non créé / non lancé**) ; revérifier RAM, instantané SHA, contexte de
-   build et secrets `change-me` avant exécution ; préserver QA 8010.
-2. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
+1. **Test cartographique iPhone dédié** (ticket **non créé / non lancé**)
+   — même compte Preview ; sans modification de données ; sans présumer
+   du fournisseur Google Maps sur iOS.
+2. **YUNIMOBILE-0011I** — construction API mobile isolée (**non créé /
+   non lancé**) ; revérifier RAM / contexte avant exécution ; préserver
+   QA 8010.
+3. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
    ressources et priorité le permettront.
-3. SDK 58 beta / EAS iOS : **non commencés**.
+4. SDK 58 beta / EAS iOS : **non commencés**.
 
-API mobile isolée : configuration prête (0011H) ; build / runtime non lancés.
-Preuves démarrage iPhone consignées (0011G, Kyria) ; API / auth / carte /
-session encore à valider.
+0011J **terminé** (parcours auth manuel partiellement consigné ; limites
+conservées). API mobile isolée : config prête (0011H) ; build / runtime
+non lancés. Carte iPhone encore à tester.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
