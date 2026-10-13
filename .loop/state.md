@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-13 12:05 (Europe/Paris) — YUNIMOBILE-0011J terminé (test auth iPhone partiel consigné) ; 0011I non lancé
+**Mis à jour le** : 2026-10-13 14:25 (Europe/Paris) — YUNIMOBILE-0011K terminé (session + carte iPhone partielle) ; 0011I non lancé
 
 ## Étape en cours
 
@@ -31,11 +31,29 @@
 | 0.11F-A Environnement Android et AVD API 35 | YUNIMOBILE-0011F-A | Terminé — diagnostic OK ; préparation bloquée (JDK 17 + RAM) |
 | 0.11G Preuves runtime iPhone | YUNIMOBILE-0011G | Terminé — démarrage iPhone consigné ; API/auth/carte/session non validés |
 | 0.11H Préparation API mobile isolée | YUNIMOBILE-0011H | Terminé — config statique préparée ; build/lancement/API iPhone non exécutés |
-| 0.11J Auth iPhone Preview | YUNIMOBILE-0011J | Terminé — test auth iPhone partiel consigné ; Reload NON TESTÉE |
+| 0.11J Auth iPhone Preview | YUNIMOBILE-0011J | Terminé — auth partielle ; Reload était NON TESTÉE (PASS en 0011K) |
+| 0.11K Session + carte iPhone Preview | YUNIMOBILE-0011K | Terminé — test iPhone session et carte partiel consigné |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011K
+
+- **Terminé** — test iPhone session et carte partiel consigné (API
+  Preview).
+- Branche : `docs/yunimobile-0011k-iphone-session-map` ; fichier
+  `.loop/tickets/YUNIMOBILE-0011K.md`.
+- **PASS (Kyria)** : Reload session sans ressaisie ; fond de carte ;
+  déplacement/zoom ; recentrage Reims.
+- **Capture** : fournisseur session **Apple Maps** ; état « Aucun
+  événement à proximité » ; aucun marqueur → fiche/retour **NON TESTÉS** ;
+  cause absence événements **non déterminée**.
+- **Google Maps** : cible définitive Web + Mobile ; **non validée** sur
+  iOS. Expiration/refresh tokens et builds natifs : **non validés**.
+- Metro : arrêt **volontaire** ; port **8081 libre** ; QA **8010
+  préservée**. 0011I / mobile-dev **non lancés**.
+- Aucun push ni merge à la clôture.
 
 ### Historique — YUNIMOBILE-0011J
 
@@ -47,9 +65,10 @@ Aucun.
   protégée accessible ; fil local et profil affichés ; déconnexion et
   suite conformes. Identités / contenu publications **non** retranscrits.
 - **Captures** : appui utilisateur, non intégrées au dépôt.
-- Persistance après Reload : **NON TESTÉE**.
-- **Non validés** : validation globale auth/sécurité ; carte ; expiration
-  / refresh session ; builds natifs.
+- Persistance après Reload : était **NON TESTÉE** en 0011J ; **PASS**
+  consignés ensuite en **0011K** (déclaration Kyria).
+- **Non validés** (au moment de 0011J) : validation globale auth/sécurité ;
+  carte ; expiration / refresh session ; builds natifs.
 - Metro session Preview arrêté ; 0011I / mobile-dev **non lancés**.
 - Aucun push ni merge à la clôture.
 
@@ -555,10 +574,13 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   reprise AVD : non lancés. Aucun JDK installé ni achat Apple requis pour
   le smoke Expo Go iPhone.
 - API mobile depuis iPhone : **connectivité Preview prouvée** ; parcours
-  manuel login → zone protégée → logout **consigné** (0011J, déclaration
-  Kyria + captures non retranscrites). **Pas** de validation globale
-  auth/sécurité. Reload session : **NON TESTÉE**. Carte, refresh /
-  expiration, builds natifs : **non validés**.
+  login → zone protégée → logout **consigné** (0011J). Reload session :
+  **PASS** (0011K). Carte Preview : fond + pan/zoom + recentrage Reims
+  **PASS** ; fournisseur observé **Apple Maps** ; marqueurs/fiche
+  **NON TESTÉS** ; absence d’événements, cause **non déterminée**.
+  **Google Maps** reste la cible définitive Web + Mobile, **non validée**
+  sur iOS. Refresh/expiration tokens et builds natifs : **non validés**.
+  **Pas** de validation globale auth/sécurité.
 
 ### Détail technique — YUNIMOBILE-0011E-B (complément historique)
 
@@ -587,19 +609,16 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **Test cartographique iPhone dédié** (ticket **non créé / non lancé**)
-   — même compte Preview ; sans modification de données ; sans présumer
-   du fournisseur Google Maps sur iOS.
-2. **YUNIMOBILE-0011I** — construction API mobile isolée (**non créé /
+1. **YUNIMOBILE-0011I** — construction API mobile isolée (**non créé /
    non lancé**) ; revérifier RAM / contexte avant exécution ; préserver
    QA 8010.
-3. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
+2. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
    ressources et priorité le permettront.
-4. SDK 58 beta / EAS iOS : **non commencés**.
+3. SDK 58 beta / EAS iOS : **non commencés**.
+4. Suite iPhone éventuelle (marqueurs / Google Maps iOS) : **non lancée**.
 
-0011J **terminé** (parcours auth manuel partiellement consigné ; limites
-conservées). API mobile isolée : config prête (0011H) ; build / runtime
-non lancés. Carte iPhone encore à tester.
+0011J et 0011K **terminés** (limites carte/session conservées). API
+mobile isolée : config prête (0011H) ; build / runtime non lancés.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
