@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-13 00:33 (Europe/Paris) — YUNIMOBILE-0011F-A terminé ; préparation Android bloquée
+**Mis à jour le** : 2026-10-13 02:45 (Europe/Paris) — YUNIMOBILE-0011G terminé ; priorité API isolée iPhone ; 0011H non lancé
 
 ## Étape en cours
 
@@ -29,10 +29,28 @@
 | 0.11E-D Migration Expo SDK 56 → 57 | YUNIMOBILE-0011E-D | Terminé — migration statique Expo SDK 57 réussie ; runtime iPhone non exécuté (Expo Go 58 incompatible) |
 | 0.11E-E Audit SDK 58 et stratégie runtime | YUNIMOBILE-0011E-E | Terminé — audit SDK 58 et stratégie runtime réalisés ; Option E |
 | 0.11F-A Environnement Android et AVD API 35 | YUNIMOBILE-0011F-A | Terminé — diagnostic OK ; préparation bloquée (JDK 17 + RAM) |
+| 0.11G Preuves runtime iPhone | YUNIMOBILE-0011G | Terminé — démarrage iPhone consigné ; API/auth/carte/session non validés |
 
 ## Ticket actif
 
 Aucun.
+
+### Historique — YUNIMOBILE-0011G
+
+- **Terminé** — preuves de démarrage iPhone consignées (rapports / captures
+  **Kyria**, **sans** réexécution par l’agent) ; code testé `3d361cc…`
+  (branche 0011F-A). Anciens rapports historiques **préservés**.
+- Expo Go : TestFlight **58.0.2** (build 1017888) ; retour App Store
+  **57.0.9** / SDK **57.0.0** — blocage Go **levé** ; provenance Go 58 =
+  **TestFlight**.
+- Runtime : Metro LAN OK ; JS exécuté ; accueil / login / register ;
+  **non validés** : accès API, authentification, carte, session, builds
+  natifs.
+- Diagnostic API (Cursor) : `EXPO_PUBLIC_API_URL` absente ; secours
+  `127.0.0.1:8010` ; 8010 = QA Web localhost.
+- Priorité : **API de test isolée iPhone**. Prochain ticket proposé :
+  **YUNIMOBILE-0011H** (**non lancé**). Android en pause ; SDK 58 beta
+  non retenu.
 
 ### Historique — YUNIMOBILE-0011F-A
 
@@ -487,19 +505,21 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
   **réalisée** (0011D) ; Google Maps Android/iOS runtime **non prouvés** ;
   Mapbox retiré du chemin carte mobile ; helpers utils Mapbox conservés (Web) ;
   FastAPI commun.
-- Compatibilité Expo Go iPhone : **bloquée** (Go annonce SDK **58** vs projet
-  SDK **57**) ; provenance Go 58 **non vérifiée** ; runtime reporté.
-- Stratégie runtime : **Option E** retenue (CTO, 0011E-E). Projet sur
-  SDK **57** ; Android d’abord ; iOS EAS / Apple Developer différés ;
-  pas de migration SDK 58 beta ; pas de migration 58 avant stable + audit.
-- Cible prochain travail : **YUNIMOBILE-0011F-A** (AVD API 35) puis
-  **0011F-B** (premier runtime Android) ; iOS native ultérieur seulement
-  après autorisation séparée ; aucun Android physique détecté.
-- JDK : **17 absent** ; Java 21 / 23 présents **non retenus** (CTO) ;
-  `JAVA_HOME` process UNSET ; install proposée en **0011F-JDK17** (non lancé).
-- Android : adb + emulator présents ; cmdline-tools / avdmanager **absents** ;
-  **aucun AVD** ; image API 35 Play x86_64 **installée** ; RAM libre
-  observée **0,7–0,8 Gio** (émulateur non prêt).
+- Compatibilité Expo Go iPhone : **levée** (2026-10-13, 0011G) — retour
+  App Store **57.0.9** / SDK **57** ; provenance de l’ancien Go 58 =
+  **TestFlight** (build 1017888) selon captures.
+- Stratégie runtime : **Option E** retenue (0011E-E) ; SDK 58 beta **toujours
+  non retenu**. **Évolution 2026-10-13 (0011G)** : la priorité opérationnelle
+  devient **poursuivre les tests iPhone avec une API de test isolée** (sans
+  toucher à la QA Web). Cela **actualise** la décision antérieure
+  « Android d’abord » sans annuler les constats Android de 0011F-A.
+- Android : préparation **en pause** — JDK **17 absent** ; Java 21/23 non
+  retenus ; aucun AVD ; avdmanager absent ; image API 35 Play x86_64
+  installée ; mémoire limitée au diagnostic 0011F-A. **0011F-JDK17** /
+  reprise AVD : non lancés. Aucun JDK installé ni achat Apple requis pour
+  le smoke Expo Go iPhone.
+- API mobile depuis iPhone : **non validée** (secours `127.0.0.1:8010` ;
+  8010 = QA Web localhost). Auth / carte / session : non validées.
 
 ### Détail technique — YUNIMOBILE-0011E-B (complément historique)
 
@@ -528,14 +548,14 @@ Fichier : `.loop/tickets/YUNIMOBILE-0003.md`.
 
 ## Prochaine étape proposée
 
-1. **YUNIMOBILE-0011F-JDK17** — installation JDK 17 (**non lancé** ;
-   fichier ticket non créé).
-2. Reprise AVD / session Android après JDK 17 **et** RAM libre suffisante.
-3. **YUNIMOBILE-0011F-B** — premier runtime Android SDK 57 (réservé ;
-   non commencé).
-4. SDK 58 et EAS iOS : **non commencés**.
+1. **YUNIMOBILE-0011H** — préparation de l’environnement API mobile isolé
+   (**non lancé** ; fichier ticket non créé).
+2. Android (pause) : **0011F-JDK17** puis AVD / **0011F-B** lorsque
+   ressources et priorité le permettront.
+3. SDK 58 beta / EAS iOS : **non commencés**.
 
-Runtime iPhone non exécuté (Go 58 ≠ projet 57 ; provenance Go non vérifiée).
+Preuves démarrage iPhone consignées (0011G, Kyria) ; API / auth / carte /
+session encore à valider.
 
 ### Clôture autorisée par le CTO (2026-10-02)
 
