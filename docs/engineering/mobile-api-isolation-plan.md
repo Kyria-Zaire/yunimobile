@@ -120,6 +120,22 @@ pendant le test.
 - Secrets réels uniquement dans `ops/mobile-dev/.env` (gitignoré ; **non créé**
   ici).
 
+### Mot de passe PostgreSQL et `DATABASE_URL` (diagnostic CodeRabbit accepté)
+
+| Paramètre | Usage |
+|---|---|
+| `POSTGRES_PASSWORD` | Valeur **brute** pour le conteneur Postgres uniquement |
+| `POSTGRES_PASSWORD_URLENCODED` | **Même** valeur, encodée URL, pour le segment mot de passe de `DATABASE_URL` |
+| `POSTGRES_USER` | Identifiant brut pour Postgres / healthcheck |
+| `POSTGRES_USER_URLENCODED` | Même identifiant, encodé URL, pour le segment user de `DATABASE_URL` |
+
+- Les formes `*_URLENCODED` sont **dérivées** des valeurs brutes (encodage
+  percent RFC 3986 / équivalent `EscapeDataString`) — **jamais** choisies
+  indépendamment.
+- **Ne pas** appliquer un encodage URL au mot de passe reçu par PostgreSQL.
+- Les deux paires sont **obligatoires** (`${VAR:?…}`).
+- Aucun mot de passe réel ni affichage de valeur dans les journaux de validation.
+
 ## 5. Isolation (statique, post-correction)
 
 | Critère | Statut |
@@ -176,20 +192,29 @@ docker compose -p yunicity-mobile-dev -f ops/mobile-dev/compose.yaml --env-file 
 # → exit ≠ 0 (YUNICITY_REPO_ROOT is required)
 ```
 
+Échec si `POSTGRES_PASSWORD_URLENCODED` manque ou est vide (fichier env de
+test sans cette clé, ou clé vide) → exit ≠ 0.
+
 ## 9. Conditions pré-build (clôture 0011H)
 
 À satisfaire **avant** tout build / lancement (ticket proposé **0011I**, non
 créé ici) :
 
 1. **Instantané** à SHA Git complet vérifié, hors worktree Web actif et hors
-   dépôt yunimobile — non créé dans 0011H.
-2. **Inventaire du contexte de build autorisé** : arborescence envoyée au
-   daemon = ce que le Dockerfile copie après `.dockerignore` (`pyproject.toml`,
-   `README.md`, `app/`, `workers/`, `alembic/`, `alembic.ini`, `tests/`,
-   `scripts/`, `data/` hors `data/dev_backups/`). Aucun secret, clé, credential
-   ni donnée locale QA/prod ne doit y figurer. Exclusions manquantes hors
-   `.env` (ex. `*.pem`, credentials génériques) : écarts documentés § 2.4 —
-   à traiter avant build si exigé.
+   dépôt yunimobile — **sans** fichiers non suivis récupérés depuis le
+   worktree actif. Non créé dans 0011H.
+2. **Inventaire du contexte de build** (diagnostic CodeRabbit accepté) :
+   - Couvrir **tout** ce que Docker envoie au builder après application des
+     règles `.dockerignore` (y compris réinclusions `!…` et tout ignore
+     spécifique au Dockerfile s’il existe).
+   - Les instructions `COPY` du Dockerfile **ne suffisent pas** à définir
+     cet inventaire : elles ne listent que ce qui entre dans l’image.
+   - Contrôler **séparément** (a) le contexte transmis et (b) ce qui est
+     réellement copié dans l’image.
+   - **Refuser avant build** tout secret, clé, credential ou donnée locale
+     présent dans le contexte.
+   - Ce contrôle est une **précondition future** : il **n’a pas** été
+     exécuté dans 0011H. Écarts `.dockerignore` hors `.env` : § 2.4.
 3. **Dépendances** : le Dockerfile n’utilise pas `uv.lock` ;
    reproductibilité des dépendances **non démontrée**.
 4. **Init Postgres** : uniquement sur volume neuf — extensions + base de test
@@ -202,9 +227,23 @@ mesure RAM : 1,34 Gio libres → lancement BLOCKED).
 ## 10. Préconditions restantes (pour 0011I)
 
 1. RAM libre ≥ 4 Gio (revérifier).
-2. Créer l’instantané backend (SHA vérifié) hors worktree Web.
-3. Créer `ops/mobile-dev/.env` dédié ; remplacer tous les `change-me`.
-4. Traiter les écarts `.dockerignore` / verrouillage deps si exigés.
-5. Build, `up`, health, migrations ; seed exclu de 0011H.
-6. `EXPO_PUBLIC_API_URL` mobile : hors 0011H.
-7. Préserver QA **8010**.
+2. Créer l’instantané backend (SHA vérifié) hors worktree Web, sans untracked
+   du worktree actif.
+3. Inventaire complet du contexte Docker + contrôle séparé du contenu image
+   (pas encore exécuté).
+4. Créer `ops/mobile-dev/.env` dédié ; remplacer tous les `change-me` ;
+   dériver `*_URLENCODED` des valeurs brutes.
+5. Traiter les écarts `.dockerignore` / verrouillage deps si exigés.
+6. Build, `up`, health, migrations ; seed exclu de 0011H.
+7. `EXPO_PUBLIC_API_URL` mobile : hors 0011H.
+8. Préserver QA **8010**.
+
+## 11. Corrections post-PR #13 (diagnostics CodeRabbit)
+
+Diagnostics acceptés et intégrés dans la documentation / Compose de cette
+passe (sans commit dans la passe de correction documentaire ; sans relancer
+CodeRabbit) :
+
+1. Inventaire contexte Docker ≠ liste des `COPY` — § 9 point 2.
+2. `DATABASE_URL` : `POSTGRES_PASSWORD` brut + `POSTGRES_PASSWORD_URLENCODED`
+   (et user encodé) — § 4.

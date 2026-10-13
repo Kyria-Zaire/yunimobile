@@ -79,7 +79,12 @@ services:
     # (`--env-file ops/mobile-dev/.env`). Do not mount QA/prod env files.
     # No volume mounts: runtime code is the image COPY layers only.
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres-mobile:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      # POSTGRES_* raw values go to the Postgres container only.
+      # DATABASE_URL must use URL-encoded user/password segments
+      # (POSTGRES_USER_URLENCODED / POSTGRES_PASSWORD_URLENCODED), derived
+      # from the raw values — never chosen independently. Do not URL-encode
+      # the password sent to PostgreSQL itself.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER_URLENCODED:?POSTGRES_USER_URLENCODED is required}:${POSTGRES_PASSWORD_URLENCODED:?POSTGRES_PASSWORD_URLENCODED is required}@postgres-mobile:5432/${POSTGRES_DB:?POSTGRES_DB is required}
       REDIS_URL: redis://redis-mobile:6379/0
       APP_NAME: ${APP_NAME:-Yunicity Mobile Dev API}
       APP_ENV: ${APP_ENV:-dev}

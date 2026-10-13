@@ -1,6 +1,6 @@
 # État du loop — Yunicity Mobile
 
-**Mis à jour le** : 2026-10-13 09:20 (Europe/Paris) — YUNIMOBILE-0011H terminé ; config API mobile préparée ; 0011I proposé non lancé
+**Mis à jour le** : 2026-10-13 09:40 (Europe/Paris) — YUNIMOBILE-0011H terminé ; diagnostics PR #13 acceptés (contexte Docker / DATABASE_URL) ; 0011I non lancé
 
 ## Étape en cours
 
@@ -44,9 +44,12 @@ Aucun.
 - Dernière mesure RAM : **1,34 Gio** libres → lancement **BLOCKED** ;
   ressources et contexte de build **à revérifier** avant toute exécution.
 - Conditions pré-build consignées : instantané SHA hors worktree Web (non
-  créé) ; contexte sans secret ; deps non verrouillées via `uv.lock` ;
-  init volume neuf (extensions + base test vide, pas de seed) ; pas de
-  réutilisation QA/prod.
+  créé) ; inventaire **contexte Docker complet** (≠ seuls `COPY`) à exécuter
+  avant build ; deps non verrouillées via `uv.lock` ; init volume neuf
+  (extensions + base test vide, pas de seed) ; pas de réutilisation QA/prod ;
+  `POSTGRES_PASSWORD` brut + `*_URLENCODED` pour `DATABASE_URL`.
+- PR #13 : 2 diagnostics CodeRabbit **acceptés** (contexte build ;
+  encodage URL du mot de passe dans l’URL seulement).
 - Rapport : `docs/engineering/mobile-api-isolation-plan.md`.
 - Prochain ticket proposé : **YUNIMOBILE-0011I** — construction et validation
   API mobile isolée (**non créé / non lancé**).
