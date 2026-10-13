@@ -1,0 +1,133 @@
+# Yunicity — isolated mobile-dev API stack (YUNIMOBILE-0011H)
+#
+# Project name is fixed below. Always drive with:
+#   docker compose -p yunicity-mobile-dev -f ops/mobile-dev/compose.yaml --env-file ops/mobile-dev/.env <cmd>
+#
+# Isolation rules (static):
+# - Distinct project, container names, volumes, network from yunicity-qa
+# - No host publish for Postgres/Redis
+# - API host port from MOBILE_API_* only (intended LAN bind)
+# - No video worker, no Docker socket, no privileged, no QA env_file mounts
+# - Backend runtime uses ONLY the image filesystem (no bind-mount over /app)
+# - Build context and Postgres init must come from a frozen backend snapshot
+#   (YUNICITY_REPO_ROOT), never from the active Web worktree
+
+name: yunicity-mobile-dev
+
+services:
+  postgres-mobile:
+    image: postgis/postgis:16-3.4
+    container_name: yunicity-postgres-mobile-dev
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - yunicity-mobile-dev-pgdata:/var/lib/postgresql/data
+      # Init runs once on empty volume create. Path must be the frozen snapshot
+      # (same YUNICITY_REPO_ROOT as the image build), read-only.
+      - type: bind
+        source: ${YUNICITY_REPO_ROOT:?YUNICITY_REPO_ROOT is required}/infra/docker/postgres/init
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+    networks:
+      - mobile-dev
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: "no"
+
+  redis-mobile:
+    image: redis:7-alpine
+    container_name: yunicity-redis-mobile-dev
+    volumes:
+      - yunicity-mobile-dev-redis:/data
+    networks:
+      - mobile-dev
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: "no"
+
+  backend-mobile:
+    build:
+      context: ${YUNICITY_REPO_ROOT:?YUNICITY_REPO_ROOT is required}/backend
+      dockerfile: Dockerfile
+    container_name: yunicity-backend-mobile-dev
+    command:
+      [
+        "uvicorn",
+        "app.main:create_app",
+        "--factory",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+      ]
+    ports:
+      - "${MOBILE_API_BIND_HOST:?MOBILE_API_BIND_HOST is required}:${MOBILE_API_HOST_PORT:?MOBILE_API_HOST_PORT is required}:8000"
+    # Secrets and parameters come from Compose interpolation
+    # (`--env-file ops/mobile-dev/.env`). Do not mount QA/prod env files.
+    # No volume mounts: runtime code is the image COPY layers only.
+    environment:
+      # POSTGRES_* raw values go to the Postgres container only.
+      # DATABASE_URL must use URL-encoded user/password segments
+      # (POSTGRES_USER_URLENCODED / POSTGRES_PASSWORD_URLENCODED), derived
+      # from the raw values — never chosen independently. Do not URL-encode
+      # the password sent to PostgreSQL itself.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER_URLENCODED:?POSTGRES_USER_URLENCODED is required}:${POSTGRES_PASSWORD_URLENCODED:?POSTGRES_PASSWORD_URLENCODED is required}@postgres-mobile:5432/${POSTGRES_DB:?POSTGRES_DB is required}
+      REDIS_URL: redis://redis-mobile:6379/0
+      APP_NAME: ${APP_NAME:-Yunicity Mobile Dev API}
+      APP_ENV: ${APP_ENV:-dev}
+      DEBUG: ${DEBUG:-true}
+      API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER:?REFRESH_TOKEN_PEPPER is required}
+      RATE_LIMIT_KEY_PEPPER: ${RATE_LIMIT_KEY_PEPPER:?RATE_LIMIT_KEY_PEPPER is required}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-pilot}
+      REGISTRATION_CLOSES_AT: ${REGISTRATION_CLOSES_AT:-2099-01-01T00:00:00+00:00}
+      MEDIA_UPLOAD_DIR: ${MEDIA_UPLOAD_DIR:-/data/media}
+      MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL:?MEDIA_PUBLIC_BASE_URL is required}
+      LOCAL_VIDEO_STORAGE_BACKEND: ${LOCAL_VIDEO_STORAGE_BACKEND:-filesystem}
+      STORY_MEDIA_STORAGE_BACKEND: ${STORY_MEDIA_STORAGE_BACKEND:-filesystem}
+      STORY_MEDIA_UPLOAD_DIR: ${STORY_MEDIA_UPLOAD_DIR:-/data/media/stories}
+      PROFILE_MEDIA_STORAGE_BACKEND: ${PROFILE_MEDIA_STORAGE_BACKEND:-filesystem}
+      PROFILE_MEDIA_UPLOAD_DIR: ${PROFILE_MEDIA_UPLOAD_DIR:-/data/media/profiles}
+      MANAGED_PERSISTENT_MEDIA_ENABLED: ${MANAGED_PERSISTENT_MEDIA_ENABLED:-false}
+    networks:
+      - mobile-dev
+    depends_on:
+      postgres-mobile:
+        condition: service_healthy
+      redis-mobile:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: "no"
+
+networks:
+  mobile-dev:
+    name: yunicity-mobile-dev-net
+    driver: bridge
+
+volumes:
+  yunicity-mobile-dev-pgdata:
+    name: yunicity-mobile-dev-pgdata
+  yunicity-mobile-dev-redis:
+    name: yunicity-mobile-dev-redis
