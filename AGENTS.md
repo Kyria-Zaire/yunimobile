@@ -73,3 +73,25 @@ sur Yunicity Mobile.
 - Commit, push, merge, déploiement ou installation uniquement lorsque l'action est
   explicitement autorisée par le ticket ou par l'utilisateur.
 - Un seul agent écrit dans un même arbre de travail à la fois.
+
+## Environnement Cloud Agent
+
+Les commandes de vérification du dépôt sont celles du README (« Commandes vérifiées »).
+Compléments propres à l'image Cloud :
+
+- Installation : `CI=1 pnpm install --frozen-lockfile`, depuis la racine. Node `>=20`
+  et pnpm `9.15.9` sont déjà sur le PATH d'un shell de login (`bash -l`).
+- Ne pas exporter `CI=1` pour le serveur de dev : Metro désactive alors la
+  surveillance des fichiers.
+- Serveur de dev, depuis `apps/mobile` :
+  `EXPO_NO_TELEMETRY=1 pnpm exec expo start --host localhost --port 8081`.
+  Il écoute sur `localhost` en IPv6 (`::1`). Utiliser `http://localhost:8081`
+  (`/status` répond `packager-status:running`). `http://127.0.0.1:8081` ne répond pas.
+- Le bundle de dev Android est
+  `http://localhost:8081/node_modules/expo-router/entry.bundle?platform=android&dev=true&hot=false&lazy=true&transform.routerRoot=app`.
+- L'export statique reste `expo export --platform android` vers un dossier hors dépôt.
+- `expo install --check` peut signaler des correctifs SDK plus récents que le
+  lockfile. Ne pas réécrire le lockfile sans ticket.
+- Aucun SDK Android, émulateur, ni simulateur iOS dans cette image. Le backend
+  FastAPI n'est pas dans ce dépôt : `/api/v1/health` vise `EXPO_PUBLIC_API_URL`,
+  sinon `http://127.0.0.1:8010`.
